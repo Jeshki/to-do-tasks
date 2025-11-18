@@ -1,9 +1,9 @@
-import "~/styles/globals.css";
+import "./globals.css";
 
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Montserrat } from "next/font/google";
 
-import { TRPCReactProvider } from "~/trpc/react";
+import { TRPCReactProvider } from "~/styles/uploadthing/react";
 
 export const metadata: Metadata = {
 	title: "Create T3 App",
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 	icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-const geist = Geist({
+const geist = Montserrat({
 	subsets: ["latin"],
 	variable: "--font-geist-sans",
 });

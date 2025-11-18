@@ -3,7 +3,7 @@
 import { X, ImageIcon } from "lucide-react";
 import type { Task } from "./post";
 import { UploadButton } from "~/utils/uploadthing";
-import { api } from "~/trpc/react";
+import { api } from "~/styles/uploadthing/react";
 import Image from "next/image";
 
 export function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void; }) {
