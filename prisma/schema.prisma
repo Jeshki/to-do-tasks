@@ -1,5 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// prisma/schema.prisma
 
 generator client {
     provider = "prisma-client-js"
@@ -7,38 +6,23 @@ generator client {
 
 datasource db {
     provider = "postgresql"
-    // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
-    // Further reading:
-    // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
-    // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
     url      = env("DATABASE_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+// --- NextAuth Modeliai ---
 
-    createdBy   User   @relation(fields: [createdById], references: [id])
-    createdById String
-
-    @@index([name])
-}
-
-// Necessary for Next auth
 model Account {
     id                       String  @id @default(cuid())
     userId                   String
     type                     String
     provider                 String
     providerAccountId        String
-    refresh_token            String? // @db.Text
-    access_token             String? // @db.Text
+    refresh_token            String?
+    access_token             String?
     expires_at               Int?
     token_type               String?
     scope                    String?
-    id_token                 String? // @db.Text
+    id_token                 String?
     session_state            String?
     user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
     refresh_token_expires_in Int?
@@ -62,8 +46,8 @@ model User {
     image         String?
     accounts      Account[]
     sessions      Session[]
-    posts         Post[]
-    todos         Todo[]
+    
+    categories    Category[]
 }
 
 model VerificationToken {
@@ -74,14 +58,63 @@ model VerificationToken {
     @@unique([identifier, token])
 }
 
-model Todo {
-    id          Int      @id @default(autoincrement())
+// --- Jūsų Aplikacijos Modeliai ---
+
+model Category {
+    id        String   @id @default(cuid())
+    title     String
+    color     String   @default("#e2e8f0")
+    order     Int      @default(0)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    userId    String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    tasks     Task[]
+    
+    // Ryšys su nuotraukomis
+    photos    Photo[]
+
+    @@index([userId])
+}
+
+model Task {
+    id          String   @id @default(cuid())
     title       String
     description String?
-    isCompleted Boolean  @default(false)
+    completed   Boolean  @default(false)
+    order       Int      @default(0)
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
 
-    userId String
-    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    categoryId  String
+    category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+    comments    Comment[]
+    // Ryšys su nuotraukomis
+    photos      Photo[]
+
+    @@index([categoryId])
+}
+
+model Comment {
+    id        String   @id @default(cuid())
+    text      String
+    createdAt DateTime @default(now())
+
+    taskId    String
+    task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model Photo {
+    id        String   @id @default(cuid())
+    url       String
+    
+    // Gali priklausyti užduočiai
+    taskId    String?
+    task      Task?    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+    // ARBA gali priklausyti kategorijai
+    categoryId String?
+    category   Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 }
