@@ -7,7 +7,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
-import { api } from "../../trpc/react";
+import { api } from "~/uploadthing/react";
 import { type Category, type Task } from "./post";
 import { TaskItem } from "./TaskItem";
 
@@ -38,7 +38,7 @@ export function CategoryColumn({
     onSuccess: () => {
       utils.board.getBoard.invalidate();
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       alert(`Klaida trinant kategoriją: ${error.message}`);
     },
   });

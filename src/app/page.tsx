@@ -1,7 +1,15 @@
 // app/page.tsx
 import { TaskBoard } from "./_components/post";
-import { auth } from "../server/auth";
+import { auth, signOut } from "../server/auth";
 import { redirect } from "next/navigation";
+
+// PATAISYMAS: Sukuriame Server Action apvalkalą, kad atitiktų form action signatūrą.
+// Tai fiksuoja TypeScript klaidą.
+const signoutAction = async (_formData: FormData) => {
+    "use server";
+    // Nurodome, kad po atsijungimo nukreiptų į prisijungimo puslapį.
+    await signOut({ redirectTo: "/api/auth/signin" }); 
+};
 
 export default async function Home() {
   const session = await auth();
@@ -19,7 +27,8 @@ export default async function Home() {
             <span className="text-sm text-muted-foreground">
               Sveikas, {session.user.name ?? session.user.email}!
             </span>
-            <form action="/api/auth/signout" method="post">
+            {/* PATAISYMAS: Naudojame apvyniotą Server Action */}
+            <form action={signoutAction}> 
               <button className="text-sm underline">Atsijungti</button>
             </form>
           </div>

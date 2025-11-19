@@ -3,7 +3,7 @@
 import { X, ImageIcon, MessageSquare, CheckCircle, Save, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import type { Task } from "./post";
 import { UploadButton } from "../../utils/uploadthing";
-import { api } from "../src/app/server/api/trpc";
+import { api } from "~/uploadthing/react";
 import Image from "next/image";
 import { useState } from "react";
 

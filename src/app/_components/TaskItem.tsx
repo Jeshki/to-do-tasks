@@ -4,7 +4,7 @@ import { GripVertical, Trash2, CheckCircle } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { type Task } from "./post";
-import { api } from "../../trpc/react";
+import { api } from "~/uploadthing/react";
 
 export function TaskItem({ task, onTaskSelectAction }: { task: Task; onTaskSelectAction: (task: Task) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task.id });

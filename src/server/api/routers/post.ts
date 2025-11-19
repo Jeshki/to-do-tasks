@@ -20,7 +20,7 @@ function getRandomColor() {
   return COLORS[Math.floor(Math.random() * COLORS.length)]!;
 }
 
-export const boardRouter = createTRPCRouter({
+export const postRouter = createTRPCRouter({ // PATAISYTA: Pakeista iš boardRouter į postRouter
   getBoard: publicProcedure.query(async ({ ctx }) => {
     return await ctx.db.category.findMany({
       orderBy: { createdAt: "asc" },

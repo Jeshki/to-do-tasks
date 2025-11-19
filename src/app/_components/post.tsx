@@ -16,7 +16,8 @@ import {
   arrayMove,  sortableKeyboardCoordinates
 } from "@dnd-kit/sortable";
 import { Plus } from "lucide-react";
-import { api } from "../../trpc/react";
+import { api } from "~/uploadthing/react"; 
+
 import { TaskDetailModal } from "./TaskDetailModal";
 import { CategoryColumn } from "./CategoryColumn";
 
