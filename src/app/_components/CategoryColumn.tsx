@@ -1,22 +1,22 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
-import { api } from "~/styles/uploadthing/react";
+import { api } from "../../trpc/react";
 import { type Category, type Task } from "./post";
 import { TaskItem } from "./TaskItem";
 
 export function CategoryColumn({
   category,
-  onSelectTask,
+  onTaskSelectAction,
 }: {
   category: Category;
-  onSelectTask: (task: Task) => void;
+  onTaskSelectAction: (task: Task) => void;
 }) {
   const { setNodeRef } = useDroppable({
     id: category.id,
@@ -33,19 +33,45 @@ export function CategoryColumn({
     },
   });
 
+  // Mutacija kategorijos trynimui
+  const deleteCategory = api.board.deleteCategory.useMutation({
+    onSuccess: () => {
+      utils.board.getBoard.invalidate();
+    },
+    onError: (error: Error) => {
+      alert(`Klaida trinant kategoriją: ${error.message}`);
+    },
+  });
+
+  const handleDeleteCategory = () => {
+    if (confirm(`Ar tikrai norite ištrinti kategoriją "${category.title}" ir visas joje esančias užduotis?`)) {
+      deleteCategory.mutate({ categoryId: category.id });
+    }
+  };
+
+
   return (
     <div
       ref={setNodeRef}
       className="w-80 rounded-xl bg-gray-50 p-4 flex flex-col gap-4"
     >
-      <h2 className="font-semibold text-lg">
-        {category.title} ({category.tasks.length})
-      </h2>
+      <div className="flex justify-between items-center">
+        <h2 className="font-semibold text-lg">
+          {category.title} ({category.tasks.length})
+        </h2>
+        <button 
+          onClick={handleDeleteCategory}
+          className="text-gray-400 hover:text-red-500 transition"
+          title="Ištrinti kategoriją"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
 
       <SortableContext items={category.tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
         <div className="flex flex-col gap-3">
           {category.tasks.map(task => (
-            <TaskItem key={task.id} task={task} onSelectTask={onSelectTask} />
+            <TaskItem key={task.id} task={task} onTaskSelectAction={onTaskSelectAction} />
           ))}
         </div>
       </SortableContext>

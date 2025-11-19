@@ -1,12 +1,12 @@
 "use client";
 
-import { GripVertical, Trash2 } from "lucide-react";
+import { GripVertical, Trash2, CheckCircle } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { type Task } from "./post";
-import { api } from "~/styles/uploadthing/react";
+import { api } from "../../trpc/react";
 
-export function TaskItem({ task, onSelectTask }: { task: Task; onSelectTask: (task: Task) => void }) {
+export function TaskItem({ task, onTaskSelectAction }: { task: Task; onTaskSelectAction: (task: Task) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task.id });
   const utils = api.useUtils();
   const deleteTask = api.board.deleteTask.useMutation({
@@ -22,10 +22,13 @@ export function TaskItem({ task, onSelectTask }: { task: Task; onSelectTask: (ta
     <div
       ref={setNodeRef}
       style={style}
-      onClick={() => onSelectTask(task)}
-      className="bg-white p-4 rounded-lg shadow cursor-pointer relative group hover:shadow-md transition"
+      onClick={() => onTaskSelectAction(task)}
+      className={`bg-white p-4 rounded-lg shadow cursor-pointer relative group hover:shadow-md transition ${task.completed ? 'opacity-50 line-through' : ''}`}
     >
-      <h3 className="font-medium">{task.title}</h3>
+      <div className="flex items-center gap-2">
+        {task.completed && <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />}
+        <h3 className="font-medium text-wrap">{task.title}</h3>
+      </div>
       
       <button
         onClick={(e) => {

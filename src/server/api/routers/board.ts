@@ -40,6 +40,30 @@ export const boardRouter = createTRPCRouter({
       });
     }),
 
+  // PATAISYMAS: Ištrinti kategoriją su visomis užduotimis
+  deleteCategory: protectedProcedure
+    .input(z.object({ categoryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const category = await ctx.db.category.findFirst({
+        where: { id: input.categoryId, userId: ctx.session.user.id },
+      });
+      if (!category) throw new Error("Kategorija nerasta");
+
+      await ctx.db.$transaction(async (tx) => {
+        // Ištrina visas užduotis (ir susijusias nuotraukas bei komentarus dėl CASCADE)
+        await tx.category.delete({ where: { id: category.id } });
+
+        // Sutvarko likusių kategorijų order (eilės numerius)
+        await tx.category.updateMany({
+          where: { userId: ctx.session.user.id, order: { gt: category.order } },
+          data: { order: { decrement: 1 } },
+        });
+      });
+
+      return { success: true };
+    }),
+
+
   // 3. Sukurti užduotį
   createTask: protectedProcedure
     .input(z.object({
@@ -88,6 +112,89 @@ export const boardRouter = createTRPCRouter({
       });
 
       return { success: true };
+    }),
+
+  // PATAISYMAS: Atnaujinti užduoties pavadinimą ir aprašymą
+  updateTaskDetails: protectedProcedure
+    .input(z.object({
+      taskId: z.string(),
+      title: z.string().min(1).optional(),
+      description: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Patikrinimas, ar užduotis priklauso vartotojui
+      await ctx.db.task.findFirstOrThrow({
+        where: { id: input.taskId, category: { userId: ctx.session.user.id } },
+        select: { id: true },
+      });
+
+      return await ctx.db.task.update({
+        where: { id: input.taskId },
+        data: {
+          title: input.title,
+          description: input.description,
+        },
+      });
+    }),
+
+  // PATAISYMAS: Perjungti užduoties atlikimo būseną
+  toggleTaskCompletion: protectedProcedure
+    .input(z.object({
+      taskId: z.string(),
+      completed: z.boolean(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Patikrinimas, ar užduotis priklauso vartotojui
+      await ctx.db.task.findFirstOrThrow({
+        where: { id: input.taskId, category: { userId: ctx.session.user.id } },
+        select: { id: true },
+      });
+
+      return await ctx.db.task.update({
+        where: { id: input.taskId },
+        data: { completed: input.completed },
+      });
+    }),
+
+  // PATAISYMAS: Pridėti komentarą
+  addCommentToTask: protectedProcedure
+    .input(z.object({
+      taskId: z.string(),
+      text: z.string().min(1, "Komentaras negali būti tuščias"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Patikrinimas, ar užduotis priklauso vartotojui
+      await ctx.db.task.findFirstOrThrow({
+        where: { id: input.taskId, category: { userId: ctx.session.user.id } },
+        select: { id: true },
+      });
+
+      return await ctx.db.comment.create({
+        data: {
+          text: input.text,
+          taskId: input.taskId,
+        },
+      });
+    }),
+
+  // PATAISYMAS: Ištrinti nuotrauką
+  deletePhotoFromTask: protectedProcedure
+    .input(z.object({ photoId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const photo = await ctx.db.photo.findFirst({
+        where: { 
+          id: input.photoId, 
+          task: { category: { userId: ctx.session.user.id } } // Patikriname savininką per užduotį
+        },
+      });
+      
+      if (!photo) {
+        throw new Error("Nuotrauka nerasta arba neturite leidimo.");
+      }
+      
+      return await ctx.db.photo.delete({
+        where: { id: input.photoId },
+      });
     }),
 
   // 5. PAGRINDINIS: Perkelti užduotį (tarp kategorijų arba toje pačioje)

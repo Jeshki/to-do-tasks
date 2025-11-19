@@ -9,17 +9,14 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
+  DragOverlay,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable,
+  arrayMove,  sortableKeyboardCoordinates
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { Plus, GripVertical, Image as ImageIcon, MessageSquare, Trash2 } from "lucide-react";
-import { api } from "~/styles/uploadthing/react";
+import { Plus } from "lucide-react";
+import { api } from "../../trpc/react";
 import { TaskDetailModal } from "./TaskDetailModal";
 import { CategoryColumn } from "./CategoryColumn";
 
@@ -46,6 +43,7 @@ export function TaskBoard() {
   const { data: categories } = api.board.getBoard.useQuery();
   const [localCategories, setLocalCategories] = useState<Category[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   useEffect(() => {
     if (categories) setLocalCategories(structuredClone(categories));
@@ -65,7 +63,7 @@ export function TaskBoard() {
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
+    const { active, over, delta } = event;
     if (!over) return;
 
     const activeId = active.id as string;
@@ -94,7 +92,11 @@ export function TaskBoard() {
         c.tasks.some((t) => t.id === overTask.id),
       );
       if (!destCategory) return;
-      newIndex = destCategory.tasks.findIndex((t) => t.id === overTask.id);
+      const overTaskIndex = destCategory.tasks.findIndex((t) => t.id === overTask.id);
+      
+      // Check if dropping in the lower half of the target task
+      const isBelow = delta.y > 0;
+      newIndex = isBelow ? overTaskIndex + 1 : overTaskIndex;
     } else {
       return;
     }
@@ -130,29 +132,40 @@ export function TaskBoard() {
     });
   };
 
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const task = localCategories.flatMap(c => c.tasks).find(t => t.id === active.id);
+    if (task) {
+      setActiveTask(task);
+    }
+  };
+
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext 
+      sensors={sensors} 
+      collisionDetection={closestCenter} 
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveTask(null)}
+    >
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 p-8">
         {localCategories.map((category) => (
-          <CategoryColumn key={category.id} category={category} onSelectTask={setSelectedTask} />
+          <CategoryColumn key={category.id} category={category} onTaskSelectAction={setSelectedTask} />
         ))}
-
-        <button
-          onClick={() => {
-            const title = prompt("Naujos kategorijos pavadinimas?");
-            if (title?.trim()) createCategory.mutate({ title: title.trim() });
-          }}
-          className="flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-gray-300 hover:border-gray-500 transition"
-        >
-          <div className="flex items-center gap-2 text-gray-500">
-            <Plus className="h-6 w-6" /> Pridėti stulpelį
-          </div>
-        </button>
+        <div>
+          <button
+            onClick={() => {
+              const title = prompt("Naujos kategorijos pavadinimas?");
+              if (title?.trim()) createCategory.mutate({ title: title.trim() });
+            }}
+            className="flex h-12 w-full items-center justify-center rounded-xl border-2 border-dashed border-gray-300 hover:border-gray-500 transition"
+          >
+            <Plus className="h-6 w-6 text-gray-500" /> <span className="text-gray-500 ml-2">Pridėti stulpelį</span>
+          </button>
+        </div>
       </div>
 
-      {selectedTask && <TaskDetailModal task={selectedTask} onClose={() => setSelectedTask(null)} />}
+      {selectedTask && <TaskDetailModal task={selectedTask} onCloseAction={() => setSelectedTask(null)} />}
     </DndContext>
   );
 }
-
-// CategoryColumn ir TaskItem lieka tokie patys kaip ankstesniame veikiačiame variante – jei reikia, galiu atsiųsti ir juos

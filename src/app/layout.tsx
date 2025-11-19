@@ -3,7 +3,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 
-import { TRPCReactProvider } from "~/styles/uploadthing/react";
+import { TRPCReactProvider } from "~/uploadthing/react";
 
 export const metadata: Metadata = {
 	title: "Create T3 App",

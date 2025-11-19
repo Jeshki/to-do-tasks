@@ -10,6 +10,9 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: z.string().min(1),
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     
+    // PATAISYMAS: Pridėtas leidžiamų el. pašto adresų sąrašas
+    ALLOWED_EMAILS: z.string().optional(),
+
     // GRAŽINAME UPLOADTHING KINTAMUOSIUS:
     UPLOADTHING_SECRET: z.string().min(1),
     UPLOADTHING_APP_ID: z.string().min(1),
@@ -27,6 +30,9 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     NODE_ENV: process.env.NODE_ENV,
     
+    // PATAISYMAS: Pridėtas ALLOWED_EMAILS
+    ALLOWED_EMAILS: process.env.ALLOWED_EMAILS,
+
     // GRAŽINAME:
     UPLOADTHING_SECRET: process.env.UPLOADTHING_SECRET,
     UPLOADTHING_APP_ID: process.env.UPLOADTHING_APP_ID,
