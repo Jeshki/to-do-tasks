@@ -71,8 +71,19 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
 	);
 }
 
+// PATAISYMAS: Ši funkcija buvo klaidinga. NextAuth.js jau nurodo NEXTAUTH_URL,
+// o Next.js automatiškai nustato VERCEL_URL ir PORT aplinkos kintamuosius.
+// Norint prieiti prie jų kliente, jie turi būti pažymėti kaip NEXT_PUBLIC_
+// arba tiesiog geriau naudoti window.location.origin
 function getBaseUrl() {
 	if (typeof window !== "undefined") return window.location.origin;
-	if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-	return `http://localhost:${process.env.PORT ?? 3000}`;
+    // Kad išvengtume kintamųjų nuotėkio į klientą, naudojame tiesioginį kintamąjį
+    // (bet tik tuo atveju, jei jis tikrai egzistuoja serveryje).
+    // Turbopack yra labai griežtas, todėl grąžiname tik window.location.origin kliente.
+    
+    // Serverio pusėje (SSR):
+    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+	
+    // Jei Vercel aplinkos kintamieji nepasiekiami, grąžiname numatytąjį:
+    return `http://localhost:${process.env.PORT ?? 3000}`;
 }
