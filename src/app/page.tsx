@@ -1,31 +1,25 @@
 // app/page.tsx
-"use client"; // PRIDĖTA
+"use client";
 
 import { TaskBoard } from "./_components/post";
-import { auth, signOut } from "../server/auth";
+import { auth } from "../server/auth"; // signOut perkelta į actions.ts
 import { redirect } from "next/navigation";
-import { useEffect } from "react"; // IMPORTUOTA
-
-// Sukuriame Server Action apvalkalą, kad atitiktų form action signatūrą.
-const signoutAction = async (_formData: FormData) => {
-  "use server";
-  // Priverstinai nukreipiame į signin puslapį po atsijungimo
-  await signOut({ redirectTo: "/api/auth/signin" }); 
-};
+import { useEffect } from "react";
+import { signoutAction } from "./actions"; // IMPORTUOJAME ACTION IŠ KITO FAILO
 
 export default async function Home() {
   const session = await auth();
 
-  // NAUJAS KLIENTO KOMPONENTO KODAS
+  // Kodo blokas, skirtas sugadintų slapukų išvalymui po AccessDenied klaidos.
   useEffect(() => {
     // Patikriname, ar puslapis yra pakraunamas po AccessDenied klaidos
+    // (tai rodo, kad senas slapukas atmetamas).
     if (typeof window !== 'undefined' && window.location.search.includes('error=AccessDenied')) {
-      // Šis veiksmas ištrina visus NextAuth slapukus ir grąžina vartotoją į prisijungimo puslapį.
-      // Naudojame naršyklės navigaciją, kad išvalytume blogą būseną.
+      // Nukreipiame į priverstinį atsijungimo maršrutą, kad išvalytume slapukus.
+      // Po to NextAuth automatiškai nukreips vartotoją atgal į prisijungimo puslapį.
       window.location.href = '/api/auth/signout';
     }
   }, []);
-  // PABAIGA NAUJO KODO
 
   if (!session?.user) {
     redirect("/api/auth/signin");
@@ -40,6 +34,7 @@ export default async function Home() {
             <span className="text-sm text-muted-foreground">
               Sveikas, {session.user.name ?? session.user.email}!
             </span>
+            {/* NAUDOJAME IMPORTUOTĄ SERVERIO VEIKSMĄ */}
             <form action={signoutAction}> 
               <button className="text-sm underline">Atsijungti</button>
             </form>
