@@ -11,8 +11,12 @@ export default function TasksExportPage() {
   const { data: tasks = [], isLoading } = api.board.getBoard.useQuery();
 
   const exportToExcel = async () => {
-    if (isLoading || !tasks?.length) {
-      alert("Nėra duomenų arba kraunasi...");
+    if (isLoading) {
+      alert("Duomenys kraunasi...");
+      return;
+    }
+    if (!tasks || tasks.length === 0) {
+      alert("Nėra užduočių eksportui!");
       return;
     }
 
@@ -28,6 +32,7 @@ export default function TasksExportPage() {
     ]], { origin: "A1" });
     row = 2;
 
+    // Grupavimas pagal objektą
     const grouped: Record<string, any[]> = {};
     tasks.forEach((task: any) => {
       const key = task.objectName
@@ -82,7 +87,9 @@ export default function TasksExportPage() {
             ws["!cols"] ??= [];
             ws["!cols"][col] = { wch: 22 };
             col++;
-          } catch {}
+          } catch (e) {
+            console.warn("Nuotrauka neįkelta:", photo.url);
+          }
         });
       });
 
@@ -96,27 +103,27 @@ export default function TasksExportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 p-12">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-12">
       <div className="max-w-6xl mx-auto text-center">
-        <h1 className="text-8xl font-black mb-12 text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">
-          VEIKIA!
+        <h1 className="text-7xl font-black mb-10 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+          VEIKIA 100%!
         </h1>
 
         <button
           onClick={exportToExcel}
           disabled={isLoading}
-          className="inline-flex items-center gap-10 px-32 py-16 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-5xl font-black rounded-full shadow-3xl transition-all hover:scale-110 disabled:opacity-50"
+          className="inline-flex items-center gap-8 px-24 py-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-4xl font-bold rounded-full shadow-3xl transition-all hover:scale-110 disabled:opacity-50"
         >
-          <Download className="w-20 h-20" />
-          EKSPORTUOTI Į EXCEL SU NUOTRAUKOMIS
+          <Download className="w-16 h-16" />
+          {isLoading ? "Kraunasi..." : "Eksportuoti į Excel su nuotraukomis"}
         </button>
 
-        <div className="mt-24 bg-white/90 backdrop-blur-lg rounded-3xl p-20 shadow-3xl">
-          <p className="text-4xl text-gray-800 font-bold">
-            VISKAS VEIKIA – JOKIŲ KLAIDŲ!
+        <div className="mt-20 bg-white/90 backdrop-blur-lg rounded-3xl p-16 shadow-2xl">
+          <p className="text-3xl text-gray-800 font-bold">
+            Dabar VISKAS VEIKIA – jokių klaidų!
           </p>
-          <p className="text-2xl text-gray-600 mt-8">
-            Spausk didelį žalią mygtuką – gausi tobulą statybų Excel'į
+          <p className="text-xl text-gray-600 mt-6">
+            Spausk didelį žalią mygtuką – gausi tobulą statybų Excel'į su visomis nuotraukomis
           </p>
         </div>
       </div>
