@@ -1,0 +1,17 @@
+@import "@uploadthing/react/styles.css";
+
+/* src/app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ... (paliekame :root ir .dark stilius nepakeistus) */
+
+@layer base {
+  * {
+    @apply border; /* UŽTIKRINTI, kad čia yra TIK 'border' klasė */
+  }
+  body {
+    @apply bg-background text-foreground; /* Šios klasės dabar veiks su tailwind.config.js pataisymu */
+  }
+}
