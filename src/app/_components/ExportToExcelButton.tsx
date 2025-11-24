@@ -3,13 +3,25 @@
 "use client";
 
 import { Download } from "lucide-react";
+import { useMemo } from "react";
 import { api } from "~/utils/api"; // T3 App naudoja ~/ o ne @/
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
 
 // Paprastas mygtukas be shadcn Button – naudosim paprastą <button>
 export function ExportToExcelButton() {
-  const { data: tasks = [], isLoading } = api.task.getAll.useQuery();
+  const { data: categories = [], isLoading } = api.board.getBoard.useQuery();
+
+  const tasks = useMemo(
+    () =>
+      categories.flatMap((category) =>
+        category.tasks.map((task) => ({
+          ...task,
+          categoryTitle: category.title,
+        })),
+      ),
+    [categories],
+  );
 
   const exportToExcel = async () => {
     if (!tasks || tasks.length === 0) {
@@ -40,7 +52,7 @@ export function ExportToExcelButton() {
         task.id ?? "",
         task.title ?? "",
         task.description ?? "",
-        task.category ?? "",
+        task.categoryTitle ?? "",
         task.priority ?? "",
         task.completed ? "Baigta" : "Nebaigta",
         task.createdAt ? new Date(task.createdAt).toLocaleDateString("lt-LT") : "",
@@ -50,31 +62,29 @@ export function ExportToExcelButton() {
 
       XLSX.utils.sheet_add_aoa(ws, [row], { origin: `A${rowNum}` });
 
-      // Nuotraukos (jei yra attachments)
-      if (task.attachments?.length > 0) {
+      // Nuotraukos (jei yra įkeltų nuotraukų)
+      if (task.photos?.length > 0) {
         let col = 9;
-        task.attachments.forEach(async (file: any) => {
-          if (file.type?.startsWith("image/")) {
-            try {
-              const res = await fetch(file.url);
-              const blob = await res.blob();
-              const buffer = await blob.arrayBuffer();
+        task.photos.forEach(async (photo: any) => {
+          try {
+            const res = await fetch(photo.url);
+            const blob = await res.blob();
+            const buffer = await blob.arrayBuffer();
 
-              if (!ws["!images"]) ws["!images"] = [];
-              ws["!images"].push({
-                image: Buffer.from(buffer),
-                type: "buffer",
-                s: { r: rowNum - 1, c: col },
-              });
+            if (!ws["!images"]) ws["!images"] = [];
+            ws["!images"].push({
+              image: Buffer.from(buffer),
+              type: "buffer",
+              s: { r: rowNum - 1, c: col },
+            });
 
-              ws["!rows"] = ws["!rows"] || [];
-              ws["!rows"][rowNum - 1] = { hpt: 90 };
-              ws["!cols"] = ws["!cols"] || [];
-              ws["!cols"][col] = { wch: 18 };
-              col++;
-            } catch (e) {
-              console.warn("Nuotrauka neįkelta:", file.url);
-            }
+            ws["!rows"] = ws["!rows"] || [];
+            ws["!rows"][rowNum - 1] = { hpt: 90 };
+            ws["!cols"] = ws["!cols"] || [];
+            ws["!cols"][col] = { wch: 18 };
+            col++;
+          } catch (e) {
+            console.warn("Nuotrauka neįkelta:", photo.url);
           }
         });
       }
