@@ -7,8 +7,18 @@ import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
 import { api } from "~/utils/api";
 
+const IMAGE_COLUMN_START = 9;
+const IMAGE_COLUMN_COUNT = 6;
+
 export default function TasksExportPage() {
-  const { data: tasks = [], isLoading } = api.board.getBoard.useQuery();
+  const { data: categories = [], isLoading } = api.board.getBoard.useQuery();
+
+  const tasks = categories.flatMap((category) =>
+    category.tasks.map((task) => ({
+      ...task,
+      categoryTitle: category.title,
+    }))
+  );
 
   const exportToExcel = async () => {
     if (isLoading || !tasks?.length) {
@@ -22,17 +32,14 @@ export default function TasksExportPage() {
 
     // Antraštės
     XLSX.utils.sheet_add_aoa(ws, [[
-      "Objektas", "Adresas", "Nr.", "Darbas", "Aprašymas", "Kategorija", "Prioritetas",
-      "Priskirta", "Plan.val", "Real.val", "Statusas", "Sukurta", "Terminas", "Baigta",
+      "Kategorija", "Nr.", "Darbas", "Aprašymas", "Būsena", "Sukurta", "Atnaujinta",
       "Komentarų sk.", "Nuotraukų sk."
     ]], { origin: "A1" });
     row = 2;
 
     const grouped: Record<string, any[]> = {};
     tasks.forEach((task: any) => {
-      const key = task.objectName
-        ? `${task.objectName}${task.address ? ` – ${task.address}` : ""}`
-        : "Be objekto";
+      const key = task.categoryTitle || "Be kategorijos";
       grouped[key] ??= [];
       grouped[key].push(task);
     });
@@ -41,32 +48,27 @@ export default function TasksExportPage() {
       // Objekto antraštė
       XLSX.utils.sheet_add_aoa(ws, [[objectName]], { origin: `A${row}` });
       ws["!merges"] ??= [];
-      ws["!merges"].push({ s: { r: row - 1, c: 0 }, e: { r: row - 1, c: 15 } });
+      ws["!merges"].push({ s: { r: row - 1, c: 0 }, e: { r: row - 1, c: IMAGE_COLUMN_START + IMAGE_COLUMN_COUNT - 1 } });
       row += 2;
 
       taskList.forEach((task, i) => {
         const r = row + i;
         XLSX.utils.sheet_add_aoa(ws, [[
-          "", "", i + 1,
+          task.categoryTitle || "",
+          i + 1,
           task.title,
           task.description || "",
-          task.category || "",
-          task.priority || "",
-          task.assignee || "",
-          task.estimatedHours || "",
-          task.actualHours || "",
           task.completed ? "Baigta" : "Nebaigta",
-          new Date(task.createdAt).toLocaleDateString("lt-LT"),
-          task.dueDate ? new Date(task.dueDate).toLocaleDateString("lt-LT") : "",
-          task.completedAt ? new Date(task.completedAt).toLocaleDateString("lt-LT") : "",
+          task.createdAt ? new Date(task.createdAt).toLocaleDateString("lt-LT") : "",
+          task.updatedAt ? new Date(task.updatedAt).toLocaleDateString("lt-LT") : "",
           task.comments?.length || 0,
           task.photos?.length || 0,
         ]], { origin: `A${r}` });
 
-        // Nuotraukos (nuo Q stulpelio)
-        let col = 16;
+        // Nuotraukos (po tekstinių stulpelių)
+        let col = IMAGE_COLUMN_START;
         task.photos?.slice(0, 6).forEach(async (photo: any) => {
-          if (col >= 22) return;
+          if (col >= IMAGE_COLUMN_START + IMAGE_COLUMN_COUNT) return;
           try {
             const res = await fetch(photo.url);
             if (!res.ok) return;
@@ -89,7 +91,7 @@ export default function TasksExportPage() {
       row += taskList.length + 2;
     }
 
-    ws["!cols"] = Array(16).fill({ wch: 18 }).concat(Array(6).fill({ wch: 22 }));
+    ws["!cols"] = Array(IMAGE_COLUMN_START).fill({ wch: 18 }).concat(Array(IMAGE_COLUMN_COUNT).fill({ wch: 22 }));
     XLSX.utils.book_append_sheet(wb, ws, "Statybos");
     saveAs(new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })]), 
       `statybos_${new Date().toISOString().slice(0,10)}.xlsx`);
