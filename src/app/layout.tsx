@@ -1,7 +1,7 @@
 // src/app/layout.tsx
 
 import "./globals.css";
-import { TRPCReactProvider } from "~/utils/api";
+import { TRPCReactProvider } from "~/uploadthing/react";
 
 export const metadata = {
   title: "Statybos Todo",
