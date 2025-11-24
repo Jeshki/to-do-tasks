@@ -1,6 +1,3 @@
 // src/utils/api.ts
 
-import { createTRPCReact } from "@trpc/react-query";
-import type { AppRouter } from "~/server/api/root";
-
-export const api = createTRPCReact<AppRouter>();
+export { api, TRPCReactProvider, type RouterInputs, type RouterOutputs } from "~/uploadthing/react";

@@ -7,7 +7,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
-import { api } from "~/uploadthing/react";
+import { api } from "~/utils/api";
 import { type Category, type Task } from "./post";
 import { TaskItem } from "./TaskItem";
 

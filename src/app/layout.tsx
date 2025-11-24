@@ -1,7 +1,7 @@
 // src/app/layout.tsx
 
 import "./globals.css";
-import { api } from "~/utils/api";
+import { TRPCReactProvider } from "~/utils/api";
 
 export const metadata = {
   title: "Statybos Todo",
@@ -16,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="lt">
       <body>
-        <api.Provider>{children}</api.Provider>
+        <TRPCReactProvider>{children}</TRPCReactProvider>
       </body>
     </html>
   );
