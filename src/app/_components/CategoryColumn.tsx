@@ -44,7 +44,7 @@ export function CategoryColumn({
             comments: [],
             createdAt: new Date(),
             updatedAt: new Date(),
-          });
+          } as Task);
           utils.board.getBoard.setData(undefined, copy);
         }
       }
