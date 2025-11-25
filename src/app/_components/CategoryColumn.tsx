@@ -42,6 +42,8 @@ export function CategoryColumn({
             order: target.tasks.length,
             photos: [],
             comments: [],
+            createdAt: new Date(),
+            updatedAt: new Date(),
           });
           utils.board.getBoard.setData(undefined, copy);
         }
