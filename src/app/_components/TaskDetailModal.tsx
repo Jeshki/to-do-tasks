@@ -152,12 +152,12 @@ export function TaskDetailModal({
   const handleOpenGallery = (index: number) => setSelectedPhotoIndex(index);
   const handleCloseGallery = () => setSelectedPhotoIndex(null);
 
-  const mapContentTypeToExt = (contentType?: string) => {
-    if (!contentType) return "jpeg" as const;
-    if (contentType.includes("png")) return "png" as const;
-    if (contentType.includes("webp")) return "webp" as const;
-    if (contentType.includes("gif")) return "gif" as const;
-    return "jpeg" as const;
+  const mapContentTypeToExt = (contentType?: string): "png" | "jpeg" | "gif" => {
+    if (!contentType) return "jpeg";
+    if (contentType.includes("png")) return "png";
+    if (contentType.includes("gif")) return "gif";
+    // ExcelJS nepalaiko webp, konvertuojame į png
+    return "jpeg";
   };
 
   const fetchImageBase64 = async (url: string) => {
@@ -180,7 +180,7 @@ export function TaskDetailModal({
   };
 
   const fetchImagesBatched = async (photos: Task["photos"], batchSize = 3) => {
-    const results: { base64: string | null; ext: "jpeg" | "png" | "webp" | "gif"; url: string }[] = [];
+    const results: { base64: string | null; ext: "jpeg" | "png" | "gif"; url: string }[] = [];
     let processed = 0;
     for (let i = 0; i < photos.length; i += batchSize) {
       const batch = photos.slice(i, i + batchSize);

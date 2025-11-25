@@ -26,8 +26,10 @@ export type Task = {
   completed: boolean;
   categoryId: string;
   order: number;
-  photos: { id: string; url: string }[];
-  comments: { id: string; text: string; createdAt: Date }[];
+  createdAt: Date;
+  updatedAt: Date;
+  photos: { id: string; url: string; categoryId: string | null; taskId: string | null }[];
+  comments: { id: string; text: string; createdAt: Date; taskId: string }[];
 };
 
 export type Category = {

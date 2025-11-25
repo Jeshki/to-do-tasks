@@ -33,18 +33,19 @@ export function CategoryColumn({
         const copy = structuredClone(previous);
         const target = copy.find((c) => c.id === input.categoryId);
         if (target) {
-          target.tasks.push({
+          const optimisticTask: Category["tasks"][number] = {
             id: `temp-${Date.now()}`,
             title: input.title,
             description: null,
             completed: false,
             categoryId: input.categoryId,
             order: target.tasks.length,
-            photos: [],
-            comments: [],
             createdAt: new Date(),
             updatedAt: new Date(),
-          } as Task);
+            photos: [] as Category["tasks"][number]["photos"],
+            comments: [] as Category["tasks"][number]["comments"],
+          };
+          target.tasks.push(optimisticTask);
           utils.board.getBoard.setData(undefined, copy);
         }
       }
