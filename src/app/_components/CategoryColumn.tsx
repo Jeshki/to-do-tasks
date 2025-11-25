@@ -26,12 +26,48 @@ export function CategoryColumn({
   const [title, setTitle] = useState("");
 
   const createTask = api.board.createTask.useMutation({
-    onSuccess: () => {
+    onMutate: async (input) => {
+      await utils.board.getBoard.cancel();
+      const previous = utils.board.getBoard.getData();
+      if (previous) {
+        const copy = structuredClone(previous);
+        const target = copy.find((c) => c.id === input.categoryId);
+        if (target) {
+          target.tasks.push({
+            id: `temp-${Date.now()}`,
+            title: input.title,
+            description: null,
+            completed: false,
+            categoryId: input.categoryId,
+            order: target.tasks.length,
+            photos: [],
+            comments: [],
+          });
+          utils.board.getBoard.setData(undefined, copy);
+        }
+      }
+      return { previous };
+    },
+    onError: (error, _input, context) => {
+      if (context?.previous) utils.board.getBoard.setData(undefined, context.previous);
+      alert(`Klaida kuriant užduotį: ${error.message}`);
+    },
+    onSettled: () => {
       utils.board.getBoard.invalidate();
       setIsAdding(false);
       setTitle("");
     },
   });
+
+  const safeCreateTask = () => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    if (!category?.id) {
+      alert("Kategorija nerasta – bandykite perkrauti puslapį.");
+      return;
+    }
+    createTask.mutate({ title: trimmed, categoryId: category.id });
+  };
 
   // Mutacija kategorijos trynimui
   const deleteCategory = api.board.deleteCategory.useMutation({
@@ -82,12 +118,17 @@ export function CategoryColumn({
             autoFocus
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && createTask.mutate({ title, categoryId: category.id })}
+            onKeyDown={(e) => e.key === "Enter" && safeCreateTask()}
             placeholder="Užduoties pavadinimas..."
             className="px-3 py-2 border rounded-lg"
           />
           <div className="flex gap-2">
-            <button onClick={() => createTask.mutate({ title, categoryId: category.id })} className="bg-blue-500 text-white px-3 py-1 rounded">
+            <button
+              type="button"
+              onClick={safeCreateTask}
+              className="bg-blue-500 text-white px-3 py-1 rounded disabled:bg-gray-400"
+              disabled={!title.trim() || createTask.isPending}
+            >
               Pridėti
             </button>
             <button onClick={() => setIsAdding(false)} className="text-gray-500">

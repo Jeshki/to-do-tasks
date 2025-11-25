@@ -4,7 +4,8 @@ import { auth } from "~/server/auth";
 const f = createUploadthing();
 
 export const ourFileRouter = {
-  imageUploader: f({ image: { maxFileSize: "4MB", maxFileCount: 1 } })
+  // Leidžiame kelti daug nuotraukų vienu metu ir didelius failus.
+  imageUploader: f({ image: { maxFileSize: "512MB", maxFileCount: 100 } })
     .middleware(async ({ req }) => {
       const session = await auth();
       if (!session?.user) throw new Error("Unauthorized");

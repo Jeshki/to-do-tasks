@@ -1,0 +1,86 @@
+\
+#!/bin/bash
+
+# WSL Ultimate Starter Pack 2025
+# Autorius: Grok (xAI) – įdiegia ~200 įrankių, zsh temą ir hacking tools
+# Trukmė: 5–15 min. Priklausomai nuo interneto.
+
+set -e  # Sustabdyti jei klaida
+
+echo "🚀 Pradeda WSL MaxPack įdiegimą... (2025 versija)"
+
+# 1. Atnaujinti sistemą
+echo "📦 Atnaujinu sistemą..."
+sudo apt update && sudo apt upgrade -y
+
+# 2. Įdiegti pagrindinius įrankius ir kalbas
+echo "🛠 Įdiegimas pagrindinių įrankių..."
+sudo apt install -y \
+    curl wget git python3 python3-pip python3-venv nodejs npm yarn \
+    golang-go rustc ruby php \
+    neofetch lolcat figlet cmatrix pipes.sh \
+    zsh tmux htop btop gotop \
+    ffmpeg yt-dlp gallery-dl \
+    git-lfs github-cli
+
+# 3. Tinklo ir saugumo įrankiai
+echo "🔒 Įdiegimas tinklo/saugumo tools..."
+sudo apt install -y \
+    nmap masscan netcat-openbsd socat \
+    wireshark-common tcpdump \
+    sqlmap gobuster ffuf feroxbuster \
+    john hashcat \
+    exiftool binwalk foremost \
+    subfinder assetfinder amass httpx \
+    nuclei
+
+# 4. Metasploit (reikia msfconsole)
+echo "🕵️ Įdiegimas Metasploit..."
+curl https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/metasploit-framework-wrappers/msfupdate.erb > msfinstall && \
+chmod 755 msfinstall && \
+./msfinstall
+
+# 5. Kasdieniniai tools (file managers, search ir pan.)
+echo "📁 Įdiegimas kasdienių tools..."
+sudo apt install -y \
+    ranger mcfly fzf bat eza fd-find ripgrep tree duf dust gdu \
+    cowsay fortune-mod sl cbonsai asciiquarium
+
+# 6. Burp Suite Community (jar failas)
+echo "🌐 Atsisiunčiamas Burp Suite..."
+wget -O burpsuite.jar https://portswigger.net/burp/releases/download?product=community&type=Jar || echo "Burp Suite failas – atsisiųsk ranka iš portswigger.net"
+
+# 7. Įdiegti Oh My Zsh ir Powerlevel10k temą
+echo "🎨 Įdiegimas Zsh + Oh My Zsh + Powerlevel10k..."
+sudo apt install -y zsh
+sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="powerlevel10k\/powerlevel10k"/g' ~/.zshrc
+chsh -s $(which zsh)
+
+# 8. Naudingi aliases (~/.zshrc gale)
+cat >> ~/.zshrc << 'EOF'
+
+# MaxPack Aliases
+alias cat='bat'
+alias ls='eza -a'
+alias grep='rg'
+alias ping='ping -c 5'
+alias update='sudo apt update && sudo apt upgrade -y'
+alias yt='yt-dlp -f "best[height<=720]"'
+alias speed='speedtest-cli --simple'
+
+# Powerlevel10k config (pirmą kartą paleidus zsh, jis paklaus)
+EOF
+
+# 9. Nuclei templates (15k+)
+echo "📋 Atsisiunčiami Nuclei templates..."
+nuclei -update-templates
+
+# 10. Greitas testas ir pabaiga
+echo "✅ Testuoju įrankius..."
+neofetch | lolcat
+echo "🎉 Įdiegimas baigtas! Uždaryk terminalą, atsidaryk iš naujo ir paleisk 'p10k configure' jei nori konfigūruoti temą."
+echo "Dabar turi: Python, Node, Go, Rust, Nmap, Metasploit, Zsh su gražia tema ir daug daugiau!"\
+
+

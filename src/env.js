@@ -16,6 +16,7 @@ export const env = createEnv({
     // GRAŽINAME UPLOADTHING KINTAMUOSIUS:
     UPLOADTHING_SECRET: z.string().min(1),
     UPLOADTHING_APP_ID: z.string().min(1),
+    IMAGE_PROXY_ALLOWED_HOSTS: z.string().optional(),
   },
 
   client: {
@@ -36,6 +37,7 @@ export const env = createEnv({
     // GRAŽINAME:
     UPLOADTHING_SECRET: process.env.UPLOADTHING_SECRET,
     UPLOADTHING_APP_ID: process.env.UPLOADTHING_APP_ID,
+    IMAGE_PROXY_ALLOWED_HOSTS: process.env.IMAGE_PROXY_ALLOWED_HOSTS,
   },
 
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,

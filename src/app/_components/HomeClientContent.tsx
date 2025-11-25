@@ -2,10 +2,9 @@
 "use client";
 
 import { useEffect } from "react";
-// PAŠALINTA PROBLEMINE EILUTĖ: import { type FormAction } from "next/dist/server/app-render/entry-point"; 
-import { TaskBoard } from "./post";
-
-type ServerAction = (formData: FormData) => void | Promise<void>;
+// PAŠALINTA PROBLEMINE EILUTĖ: import { type FormAction } from "next/dist/server/app-render/entry-point";
+import { signOut } from "next-auth/react";
+import { TaskBoard } from "~/app/_components/post";
 
 // Supaprastinta sesijos tipo definicija
 type SessionUser = {
@@ -17,13 +16,19 @@ type Session = {
 };
 
 // PATAISYMAS: Naudojame naują ServerAction tipą
-export function HomeClientContent({ session, signoutAction }: { session: Session; signoutAction: ServerAction }) {
+export function HomeClientContent({ session }: { session: Session }) {
     // Kodo blokas, skirtas sugadintų slapukų išvalymui po AccessDenied klaidos.
     useEffect(() => {
-        // Patikriname, ar puslapis yra pakraunamas po AccessDenied klaidos
-        if (typeof window !== 'undefined' && window.location.search.includes('error=AccessDenied')) {
-            // Nukreipiame į priverstinį atsijungimo maršrutą, kad išvalytume slapukus.
-            window.location.href = '/api/auth/signout';
+        if (typeof window === "undefined") return;
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("error") === "AccessDenied") {
+            // Vengiame galimos kilpos: veikiame tik kartą per seansą.
+            const alreadyHandled = sessionStorage.getItem("accessDeniedHandled");
+            if (!alreadyHandled) {
+                sessionStorage.setItem("accessDeniedHandled", "true");
+                window.location.href = "/api/auth/signout";
+            }
         }
     }, []);
 
@@ -36,10 +41,9 @@ export function HomeClientContent({ session, signoutAction }: { session: Session
                         <span className="text-sm text-muted-foreground">
                             Sveikas, {session.user.name ?? session.user.email}!
                         </span>
-                        {/* NAUDOJAME PERDUOTĄ ACTION PROP'SĄ */}
-                        <form action={signoutAction}>
-                            <button className="text-sm underline">Atsijungti</button>
-                        </form>
+                        <button className="text-sm underline" onClick={() => signOut()}>
+                            Atsijungti
+                        </button>
                     </div>
                 </div>
             </header>

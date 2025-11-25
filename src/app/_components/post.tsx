@@ -12,11 +12,9 @@ import {
   type DragStartEvent,
   DragOverlay,
 } from "@dnd-kit/core";
-import {
-  arrayMove,  sortableKeyboardCoordinates
-} from "@dnd-kit/sortable";
+import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Plus } from "lucide-react";
-import { api } from "~/uploadthing/react"; 
+import { api } from "~/uploadthing/react";
 
 import { TaskDetailModal } from "./TaskDetailModal";
 import { CategoryColumn } from "./CategoryColumn";
@@ -51,16 +49,24 @@ export function TaskBoard() {
   }, [categories]);
 
   const createCategory = api.board.createCategory.useMutation({
-    onSuccess: () => utils.board.getBoard.invalidate(),
+    onSuccess: () => {
+      utils.board.getBoard.invalidate();
+    },
+    onError: (error) => {
+      alert(`Klaida kuriant kategoriją: ${error.message}`);
+    },
   });
 
   const moveTask = api.board.updateTaskPosition.useMutation({
     onSuccess: () => utils.board.getBoard.invalidate(),
+    onError: (error) => {
+      alert(`Klaida perkeliant užduotį: ${error.message}`);
+    },
   });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -72,15 +78,11 @@ export function TaskBoard() {
 
     if (activeId === overId) return;
 
-    const sourceCategory = localCategories.find((c) =>
-      c.tasks.some((t) => t.id === activeId),
-    );
+    const sourceCategory = localCategories.find((c) => c.tasks.some((t) => t.id === activeId));
     if (!sourceCategory) return;
 
     const overCategory = localCategories.find((c) => c.id === overId);
-    const overTask = localCategories
-      .flatMap((c) => c.tasks)
-      .find((t) => t.id === overId);
+    const overTask = localCategories.flatMap((c) => c.tasks).find((t) => t.id === overId);
 
     let destCategory: Category | undefined;
     let newIndex: number;
@@ -89,22 +91,17 @@ export function TaskBoard() {
       destCategory = overCategory;
       newIndex = destCategory.tasks.length;
     } else if (overTask) {
-      destCategory = localCategories.find((c) =>
-        c.tasks.some((t) => t.id === overTask.id),
-      );
+      destCategory = localCategories.find((c) => c.tasks.some((t) => t.id === overTask.id));
       if (!destCategory) return;
       const overTaskIndex = destCategory.tasks.findIndex((t) => t.id === overTask.id);
-      
-      // Check if dropping in the lower half of the target task
+
       const isBelow = delta.y > 0;
       newIndex = isBelow ? overTaskIndex + 1 : overTaskIndex;
     } else {
       return;
     }
 
-    const sourceTaskIndex = sourceCategory.tasks.findIndex(
-      (t) => t.id === activeId,
-    );
+    const sourceTaskIndex = sourceCategory.tasks.findIndex((t) => t.id === activeId);
 
     // Optimistic update
     setLocalCategories((prev) => {
@@ -113,10 +110,8 @@ export function TaskBoard() {
       const destCat = newCats.find((c) => c.id === destCategory!.id)!;
 
       if (sourceCat.id === destCat.id) {
-        // Moving within the same category
         destCat.tasks = arrayMove(destCat.tasks, sourceTaskIndex, newIndex);
       } else {
-        // Moving to a different category
         const [movedTask] = sourceCat.tasks.splice(sourceTaskIndex, 1);
         if (movedTask) {
           movedTask.categoryId = destCat.id;
@@ -135,16 +130,16 @@ export function TaskBoard() {
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    const task = localCategories.flatMap(c => c.tasks).find(t => t.id === active.id);
+    const task = localCategories.flatMap((c) => c.tasks).find((t) => t.id === active.id);
     if (task) {
       setActiveTask(task);
     }
   };
 
   return (
-    <DndContext 
-      sensors={sensors} 
-      collisionDetection={closestCenter} 
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveTask(null)}

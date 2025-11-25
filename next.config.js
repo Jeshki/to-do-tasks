@@ -18,3 +18,8 @@ const config = {
 
 // Naudojame CommonJS sintaksę
 module.exports = config;
+
+module.exports = {
+  turbopack: { root: __dirname },
+  images: { remotePatterns: [{ protocol: "https", hostname: "utfs.io" }] },
+};
