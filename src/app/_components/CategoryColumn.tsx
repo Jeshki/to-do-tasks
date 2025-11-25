@@ -45,7 +45,7 @@ export function CategoryColumn({
             photos: [] as Category["tasks"][number]["photos"],
             comments: [] as Category["tasks"][number]["comments"],
           };
-          target.tasks.push(optimisticTask);
+          target.tasks.push(optimisticTask as any);
           utils.board.getBoard.setData(undefined, copy);
         }
       }
