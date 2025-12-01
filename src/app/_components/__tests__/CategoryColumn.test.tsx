@@ -39,6 +39,7 @@ describe("CategoryColumn", () => {
   });
 
   it("sukuria užduotį su apkarpytu pavadinimu", () => {
+    // @ts-expect-error test render without full dnd-kit typing
     render(<CategoryColumn category={baseCategory} onTaskSelectAction={vi.fn()} />);
 
     fireEvent.click(screen.getByText(/Pridėti užduotį/i));
@@ -51,6 +52,7 @@ describe("CategoryColumn", () => {
   });
 
   it("neleidžia kurti tuščios užduoties (mygtukas disablinamas)", () => {
+    // @ts-expect-error test render without full dnd-kit typing
     render(<CategoryColumn category={baseCategory} onTaskSelectAction={vi.fn()} />);
     fireEvent.click(screen.getByText(/Pridėti užduotį/i));
     const button = screen.getByText("Pridėti") as HTMLButtonElement;
@@ -60,6 +62,7 @@ describe("CategoryColumn", () => {
   it("trynimas kviečia mutate jei patvirtinta", () => {
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
 
+    // @ts-expect-error test render without full dnd-kit typing
     render(<CategoryColumn category={baseCategory} onTaskSelectAction={vi.fn()} />);
     fireEvent.click(screen.getByTitle(/Ištrinti kategoriją/i));
 
