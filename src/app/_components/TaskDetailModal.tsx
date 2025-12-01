@@ -12,11 +12,12 @@ import {
   ChevronRight,
   Pencil,
   Download,
+  RefreshCcw,
 } from "lucide-react";
 import type { Task } from "./post";
 import { UploadButton } from "../../utils/uploadthing";
 import { api } from "~/uploadthing/react";
-import Image from "next/image";
+import NextImage from "next/image";
 import { useState } from "react";
 
 // Pagalbinis komponentas: viso ekrano galerija
@@ -47,7 +48,7 @@ function PhotoGalleryModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative w-full h-full rounded-lg overflow-hidden">
-          <Image
+          <NextImage
             src={currentPhoto.url}
             alt="Task photo preview"
             fill
@@ -96,16 +97,30 @@ export function TaskDetailModal({
   onCloseAction: () => void;
 }) {
   const utils = api.useUtils();
+  const [currentTask, setCurrentTask] = useState(task);
 
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [newTitle, setNewTitle] = useState(task.title);
-  const [newDescription, setNewDescription] = useState(task.description ?? "");
+  const [newTitle, setNewTitle] = useState(currentTask.title);
+  const [newDescription, setNewDescription] = useState(currentTask.description ?? "");
+  const formatDateTimeLocal = (value: Date | string | null | undefined) => {
+    if (!value) return "";
+    const d = new Date(value);
+    const tzOffsetMinutes = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - tzOffsetMinutes * 60 * 1000);
+    return local.toISOString().slice(0, 16);
+  };
+  const [newDate, setNewDate] = useState(formatDateTimeLocal(currentTask.createdAt));
   const [newComment, setNewComment] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
 
   const invalidate = () => utils.board.getBoard.invalidate();
+  const { refetch: refetchBoard } = api.board.getBoard.useQuery(undefined, { enabled: false });
+
+  const IMAGE_TARGET_WIDTH = 192; // ~2" at 96 DPI
+  const IMAGE_TARGET_HEIGHT = 256; // ~2.67" at 96 DPI
+  const IMAGE_QUALITY = 0.7; // lossy compression to shrink export
 
   const addPhotoToTask = api.board.addPhotoToTask.useMutation({ onSuccess: invalidate });
   const deletePhoto = api.board.deletePhotoFromTask.useMutation({ onSuccess: invalidate });
@@ -125,21 +140,23 @@ export function TaskDetailModal({
 
   const handleSave = () => {
     updateDetails.mutate({
-      taskId: task.id,
+      taskId: currentTask.id,
       title: newTitle,
       description: newDescription,
+      createdAt: newDate ? new Date(newDate).toISOString() : undefined,
     });
   };
 
   const handleCancel = () => {
-    setNewTitle(task.title);
-    setNewDescription(task.description ?? "");
+    setNewTitle(currentTask.title);
+    setNewDescription(currentTask.description ?? "");
+    setNewDate(formatDateTimeLocal(currentTask.createdAt));
     setIsEditing(false);
   };
 
   const handleCommentSubmit = () => {
     if (newComment.trim()) {
-      addComment.mutate({ taskId: task.id, text: newComment.trim() });
+      addComment.mutate({ taskId: currentTask.id, text: newComment.trim() });
     }
   };
 
@@ -151,6 +168,53 @@ export function TaskDetailModal({
 
   const handleOpenGallery = (index: number) => setSelectedPhotoIndex(index);
   const handleCloseGallery = () => setSelectedPhotoIndex(null);
+
+  const handleRefresh = async () => {
+    setExportStatus("Atnaujinama...");
+    await invalidate();
+    const res = await refetchBoard();
+    const updated = res.data
+      ?.flatMap((c) => c.tasks)
+      .find((t) => t.id === currentTask.id);
+    if (updated) {
+      setCurrentTask(updated);
+      setNewTitle(updated.title);
+      setNewDescription(updated.description ?? "");
+      setNewDate(formatDateTimeLocal(updated.createdAt));
+      setExportStatus("Atnaujinta");
+    } else {
+      setExportStatus("Nepavyko atnaujinti");
+    }
+    setTimeout(() => setExportStatus(null), 2000);
+  };
+
+  const loadImageFromDataUrl = (dataUrl: string) =>
+    new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new window.Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+
+  const compressImageDataUrl = async (dataUrl: string) => {
+    try {
+      const img = await loadImageFromDataUrl(dataUrl);
+      const ratio = Math.min(IMAGE_TARGET_WIDTH / img.width, IMAGE_TARGET_HEIGHT / img.height, 1);
+      const targetW = Math.max(1, Math.round(img.width * ratio));
+      const targetH = Math.max(1, Math.round(img.height * ratio));
+      const canvas = document.createElement("canvas");
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return dataUrl;
+      ctx.drawImage(img, 0, 0, targetW, targetH);
+      return canvas.toDataURL("image/jpeg", IMAGE_QUALITY);
+    } catch (error) {
+      console.warn("Nepavyko dekompresuoti (suspausti) paveikslo, naudojame originalų", error);
+      return dataUrl;
+    }
+  };
 
   const mapContentTypeToExt = (contentType?: string): "png" | "jpeg" | "gif" => {
     if (!contentType) return "jpeg";
@@ -169,10 +233,9 @@ export function TaskDetailModal({
       });
       if (!res.ok) throw new Error("Proxy fetch failed");
       const data = (await res.json()) as { base64: string; contentType?: string };
-      return {
-        base64: `data:${data.contentType ?? "image/jpeg"};base64,${data.base64}`,
-        ext: mapContentTypeToExt(data.contentType),
-      };
+      const rawDataUrl = `data:${data.contentType ?? "image/jpeg"};base64,${data.base64}`;
+      const compressed = await compressImageDataUrl(rawDataUrl);
+      return { base64: compressed, ext: "jpeg" as const };
     } catch (error) {
       console.error("Nepavyko gauti paveikslo per proxy", error);
       return { base64: null as string | null, ext: "jpeg" as const };
@@ -201,44 +264,94 @@ export function TaskDetailModal({
   // Eksportas: įterpia duomenis + nuotraukas į .xlsx (exceljs, klientas)
   const handleExportTaskToExcel = async () => {
     setIsExporting(true);
-    setExportStatus("Ruošiame eksportą...");
+    setExportStatus("Ruosiamas eksportas...");
     try {
       const workbook = new ExcelJS.Workbook();
       workbook.creator = "Task board";
-      const safeTitle = task.title.slice(0, 40).replace(/[/\\?*:]/g, "_") || "uzduotis";
+      const safeTitle = currentTask.title.slice(0, 40).replace(/[\\/\\?*:]/g, "_") || "uzduotis";
 
       // Lapai
       const infoSheet = workbook.addWorksheet("Informacija");
       infoSheet.addRows([
-        ["Užduotis", task.title],
-        ["Aprašymas", task.description ?? ""],
-        ["Būsena", task.completed ? "Atlikta" : "Nebaigta"],
-        ["Nuotraukų skaičius", task.photos.length],
-        ["Komentarų skaičius", task.comments.length],
+        ["Uzdutis", currentTask.title],
+        ["Aprasymas", currentTask.description ?? ""],
+        ["Busena", currentTask.completed ? "Atlikta" : "Nebaigta"],
+        ["Nuotrauku skaicius", currentTask.photos.length],
+        ["Komentaru skaicius", currentTask.comments.length],
       ]);
 
-      // Nuotraukos su įterpimu (per proxy, kad apeiti CORS)
+      // Nuotraukos su suspaudimu (per proxy + canvas) ir papildoma info
       const photosSheet = workbook.addWorksheet("Nuotraukos");
       photosSheet.columns = [
-        { header: "#", key: "idx", width: 6 },
-        { header: "Nuotraukos URL", key: "url", width: 80 },
+        { header: "Nr.", key: "idx", width: 6 },
+        { header: "Defekto pavadinimas", key: "defect", width: 45 },
+        { header: "Fotofiksacija (hyperlink)", key: "link", width: 55 },
+        { header: 'Nuotrauka 2"x2.67"', key: "frame", width: 40 },
+        { header: "Pastaba", key: "note", width: 55 },
       ];
 
-      const photosWithData = await fetchImagesBatched(task.photos);
+      const photosWithData = await fetchImagesBatched(currentTask.photos);
       const failedPhotos = photosWithData.filter((p) => !p.base64).length;
 
       photosWithData.forEach((photo, idx) => {
-        const row = photosSheet.addRow({ idx: idx + 1, url: photo.url });
-        row.getCell("url").value = { text: photo.url, hyperlink: photo.url };
-        photosSheet.getRow(row.number).height = 120;
+        const row = photosSheet.addRow({
+          idx: idx + 1,
+          defect: currentTask.title,
+          link: `Foto ${idx + 1}`,
+          frame: "",
+          note: "Pastabos irasomos ranka Excelyje",
+        });
+        const linkCell = row.getCell("link");
+        linkCell.value = { text: `Foto ${idx + 1}`, hyperlink: photo.url };
+        linkCell.font = { color: { argb: "FF1D4ED8" }, underline: true };
+        photosSheet.getRow(row.number).height = 200;
 
         if (photo.base64) {
           const imageId = workbook.addImage({ base64: photo.base64, extension: photo.ext });
           photosSheet.addImage(imageId, {
-            tl: { col: 2, row: row.number - 1 },
-            ext: { width: 320, height: 240 },
+            // place image into the photo column (0-based col index = 3)
+            tl: { col: 3, row: row.number - 1 },
+            // target ~2"x2.67" (96 DPI => ~192x256 px)
+            ext: { width: 192, height: 256 },
           });
         }
+      });
+
+      photosSheet.addRow({
+        idx: "",
+        defect: "",
+        link: 'Nuotrauka ifitinta i remeli standartiniu dydziu 2"x2.67"',
+        frame: "",
+        note: "Pastabos irasomos ranka Excelyje",
+      });
+      photosSheet.addRow({
+        idx: "",
+        defect: "",
+        link: "Foto automatiskai suspaustos eksportuojant (~70% kokybe, apie 192x256 px).",
+        frame: "",
+        note: "",
+      });
+      photosSheet.getRow(1).font = { bold: true };
+      photosSheet.eachRow((row) => {
+        row.eachCell((cell) => {
+          cell.alignment = { vertical: "middle", wrapText: true };
+        });
+      });
+
+      // Komentarai tiesiogiai po nuotraukomis tame pačiame lape
+      const commentsStart = (photosSheet.lastRow?.number ?? 1) + 2;
+      const commentsHeader = photosSheet.getCell(`A${commentsStart}`);
+      commentsHeader.value = "Komentarai";
+      commentsHeader.font = { bold: true };
+      photosSheet.mergeCells(`A${commentsStart}:E${commentsStart}`);
+      currentTask.comments.forEach((comment, idx) => {
+        photosSheet.addRow({
+          idx: idx + 1,
+          defect: "",
+          link: "",
+          frame: new Date(comment.createdAt).toLocaleString("lt-LT"),
+          note: comment.text,
+        });
       });
 
       // Komentarai
@@ -248,7 +361,7 @@ export function TaskDetailModal({
         { header: "Komentaras", key: "text", width: 80 },
         { header: "Data", key: "date", width: 26 },
       ];
-      task.comments.forEach((comment, idx) => {
+      currentTask.comments.forEach((comment, idx) => {
         commentsSheet.addRow({
           idx: idx + 1,
           text: comment.text,
@@ -256,7 +369,7 @@ export function TaskDetailModal({
         });
       });
 
-      // Generuojame ir siunčiame failą
+      // Generuojame ir siunciame faila
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -268,12 +381,12 @@ export function TaskDetailModal({
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 10_000);
       if (failedPhotos > 0) {
-        setExportStatus(`Pabaigta su perspėjimu: ${failedPhotos} paveikslai neįterpti (CORS/fetch).`);
+        setExportStatus(`Pabaigta su perspejimu: ${failedPhotos} paveikslai neiterpti (CORS/fetch).`);
       } else {
         setExportStatus("Eksportas baigtas.");
       }
     } catch (error) {
-      alert("Nepavyko sugeneruoti Excel su nuotraukomis. Patikrinkite konsolę.");
+      alert("Nepavyko sugeneruoti Excel su nuotraukomis. Patikrinkite console.");
       console.error(error);
     } finally {
       setIsExporting(false);
@@ -300,8 +413,8 @@ export function TaskDetailModal({
                 autoFocus
               />
             ) : (
-              <h2 className={`text-2xl font-bold ${task.completed ? "line-through text-muted-foreground" : ""}`}>
-                {task.title}
+              <h2 className={`text-2xl font-bold ${currentTask.completed ? "line-through text-muted-foreground" : ""}`}>
+                {currentTask.title}
               </h2>
             )}
 
@@ -344,6 +457,14 @@ export function TaskDetailModal({
               )}
 
               <button
+                onClick={handleRefresh}
+                className="text-blue-500 hover:text-blue-700 p-1 rounded transition"
+                title="Atnaujinti modalą"
+                disabled={isExporting}
+              >
+                <RefreshCcw className="h-6 w-6" />
+              </button>
+              <button
                 onClick={onCloseAction}
                 className="text-muted-foreground hover:text-foreground p-1 rounded"
               >
@@ -358,19 +479,29 @@ export function TaskDetailModal({
             </div>
           )}
 
-          <div className="mb-4">
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onChange={(e) => toggleCompletion.mutate({ taskId: task.id, completed: e.target.checked })}
+          <div className="mb-4 flex flex-col md:flex-row gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Busena:</span>
+              <select
+                value={currentTask.completed ? "done" : "open"}
+                onChange={(e) => toggleCompletion.mutate({ taskId: currentTask.id, completed: e.target.value === "done" })}
                 disabled={toggleCompletion.isPending}
-                className="h-5 w-5 text-blue-600 rounded"
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value="open">Nebaigta</option>
+                <option value="done">Užbaigta</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium whitespace-nowrap">Data:</span>
+              <input
+                type="datetime-local"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                disabled={!isEditing}
+                className="border rounded px-2 py-1 text-sm"
               />
-              <span className={`text-sm font-medium ${task.completed ? "text-green-600" : "text-gray-500"}`}>
-                {task.completed ? "Atlikta" : "Nebaigta"}
-              </span>
-            </label>
+            </div>
           </div>
 
           <div className="mt-4 border-t pt-4">
@@ -384,7 +515,7 @@ export function TaskDetailModal({
               />
             ) : (
               <p className="text-muted-foreground whitespace-pre-wrap">
-                {task.description || "Aprašymas nepridėtas."}
+                {currentTask.description || "Aprašymas nepridėtas."}
               </p>
             )}
           </div>
@@ -392,17 +523,17 @@ export function TaskDetailModal({
           <div className="mt-6 border-t pt-4">
             <h3 className="text-lg font-semibold flex items-center gap-2 mb-3">
               <ImageIcon className="h-5 w-5" />
-              Nuotraukos ({task.photos.length})
+              Nuotraukos ({currentTask.photos.length})
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {task.photos.map((photo, index) => (
+              {currentTask.photos.map((photo, index) => (
                 <div
                   key={photo.id}
                   className="relative h-64 rounded-md overflow-hidden group cursor-pointer"
                   onClick={() => handleOpenGallery(index)}
                 >
-                  <Image
+                  <NextImage
                     src={photo.url}
                     alt="Task photo"
                     fill
@@ -435,7 +566,7 @@ export function TaskDetailModal({
                 onClientUploadComplete={(res) => {
                   res?.forEach((file) => {
                     addPhotoToTask.mutate({
-                      taskId: task.id,
+                      taskId: currentTask.id,
                       url: file.url,
                     });
                   });
@@ -450,11 +581,11 @@ export function TaskDetailModal({
           <div className="mt-6 border-t pt-4">
             <h3 className="text-lg font-semibold flex items-center gap-2 mb-3">
               <MessageSquare className="h-5 w-5" />
-              Komentarai ({task.comments.length})
+              Komentarai ({currentTask.comments.length})
             </h3>
 
             <div className="space-y-3 max-h-60 overflow-y-auto">
-              {task.comments.map((comment) => (
+              {currentTask.comments.map((comment) => (
                 <div key={comment.id} className="bg-gray-100 p-3 rounded-lg text-sm">
                   <p>{comment.text}</p>
                   <span className="text-xs text-muted-foreground mt-1 block">
@@ -485,9 +616,9 @@ export function TaskDetailModal({
         </div>
       </div>
 
-      {selectedPhotoIndex !== null && task.photos.length > 0 && (
+      {selectedPhotoIndex !== null && currentTask.photos.length > 0 && (
         <PhotoGalleryModal
-          photos={task.photos}
+          photos={currentTask.photos}
           selectedIndex={selectedPhotoIndex}
           onClose={handleCloseGallery}
           setSelectedIndex={setSelectedPhotoIndex}

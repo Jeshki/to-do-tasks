@@ -120,6 +120,7 @@ export const boardRouter = createTRPCRouter({
       taskId: z.string(),
       title: z.string().min(1).optional(),
       description: z.string().optional(),
+      createdAt: z.string().datetime().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       // Patikrinimas, ar užduotis priklauso vartotojui
@@ -133,6 +134,7 @@ export const boardRouter = createTRPCRouter({
         data: {
           title: input.title,
           description: input.description,
+          createdAt: input.createdAt ? new Date(input.createdAt) : undefined,
         },
       });
     }),
