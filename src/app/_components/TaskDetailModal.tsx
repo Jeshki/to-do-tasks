@@ -69,7 +69,7 @@ function PhotoGalleryModal({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 bg-white/30 text-white p-2 rounded-full hover:bg-white/50 transition z-10"
-          title="U┼Šdaryti"
+          title="Uždaryti"
         >
           <X className="h-6 w-6" />
         </button>
@@ -77,7 +77,7 @@ function PhotoGalleryModal({
         <button
           onClick={goToPrev}
           className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/30 text-white p-3 rounded-full hover:bg-white/50 transition"
-          title="Ankstesn─Ś"
+          title="Ankstesnis"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -171,7 +171,7 @@ export function TaskDetailModal({
   };
 
   const handleDeletePhoto = (photoId: string) => {
-    if (confirm("Ar tikrai norite i┼Ītrinti ┼Īi─ģ nuotrauk─ģ?")) {
+    if (confirm("Ar tikrai norite ištrinti šią nuotrauką?")) {
       deletePhoto.mutate({ photoId });
     }
   };
@@ -226,7 +226,7 @@ export function TaskDetailModal({
       ctx.drawImage(img, 0, 0, targetW, targetH);
       return canvas.toDataURL("image/jpeg", IMAGE_QUALITY);
     } catch (error) {
-      console.warn("Nepavyko dekompresuoti (suspausti) paveikslo, naudojame original┼│", error);
+      console.warn("Nepavyko dekompresuoti (suspausti) paveikslo, naudojame originalą", error);
       return dataUrl;
     }
   };
@@ -262,7 +262,7 @@ export function TaskDetailModal({
     let processed = 0;
     for (let i = 0; i < photos.length; i += batchSize) {
       const batch = photos.slice(i, i + batchSize);
-      setExportStatus(`Atsisiun─Źiami paveikslai ${Math.min(i + batchSize, photos.length)}/${photos.length}`);
+      setExportStatus(`Atsisiunčiame paveikslus ${Math.min(i + batchSize, photos.length)}/${photos.length}`);
       const batchResults = await Promise.all(
         batch.map(async (photo) => {
           const viaProxy = await fetchImageBase64(photo.url);
@@ -271,7 +271,7 @@ export function TaskDetailModal({
       );
       results.push(...batchResults);
       processed += batch.length;
-      setExportStatus(`Atsisiun─Źiami paveikslai ${processed}/${photos.length}`);
+      setExportStatus(`Atsisiunčiami paveikslai ${processed}/${photos.length}`);
     }
     return results;
   };
@@ -504,7 +504,7 @@ export function TaskDetailModal({
                 className="border rounded px-2 py-1 text-sm"
               >
                 <option value="open">Nebaigta</option>
-                <option value="done">U┼Šbaigta</option>
+                <option value="done">Užbaigta</option>
               </select>
             </div>
             <div className="flex items-center gap-2">
@@ -561,7 +561,7 @@ export function TaskDetailModal({
                       handleDeletePhoto(photo.id);
                     }}
                     className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="I┼Ītrinti nuotrauk─ģ"
+                    title="Ištrinti nuotrauką"
                   >
                     <X className="h-4 w-4" />
                   </button>
