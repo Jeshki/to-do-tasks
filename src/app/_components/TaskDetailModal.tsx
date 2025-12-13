@@ -58,7 +58,7 @@ function PhotoGalleryModal({
         <div className="relative w-full h-full rounded-lg overflow-hidden">
           <NextImage
             src={currentPhoto.url}
-            alt="Task photo preview"
+            alt="Užduoties nuotraukos peržiūra"
             fill
             sizes="100vw"
             style={{ objectFit: "contain" }}
@@ -77,7 +77,7 @@ function PhotoGalleryModal({
         <button
           onClick={goToPrev}
           className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/30 text-white p-3 rounded-full hover:bg-white/50 transition"
-          title="Ankstesnis"
+          title="AnkstesnÄ"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -266,7 +266,7 @@ export function TaskDetailModal({
     if (!contentType) return "jpeg";
     if (contentType.includes("png")) return "png";
     if (contentType.includes("gif")) return "gif";
-    // ExcelJS nepalaiko webp, konvertuojame ─» png
+    // ExcelJS nepalaiko webp, konvertuojame Ä¯ png
     return "jpeg";
   };
 
@@ -307,10 +307,10 @@ export function TaskDetailModal({
     return results;
   };
 
-  // Eksportas: ─»terpia duomenis + nuotraukas ─» .xlsx (exceljs, klientas)
+  // Eksportas: Ä¯terpia duomenis ir nuotraukas Ä¯ .xlsx (exceljs, klientas)
   const handleExportTaskToExcel = async () => {
     setIsExporting(true);
-    setExportStatus("Ruosiamas eksportas...");
+    setExportStatus("Ruošiamas eksportas...");
     try {
       const workbook = new ExcelJS.Workbook();
       workbook.creator = "Task board";
@@ -345,7 +345,7 @@ export function TaskDetailModal({
           defect: currentTask.title,
           link: `Foto ${idx + 1}`,
           frame: "",
-          note: "Pastabos ?ra?omos ranka Excelyje",
+          note: "Pastabos raÅ¡omos ranka Excelyje",
         });
         const linkCell = row.getCell("link");
         linkCell.value = { text: `Foto ${idx + 1}`, hyperlink: photo.url };
@@ -366,14 +366,14 @@ export function TaskDetailModal({
       photosSheet.addRow({
         idx: "",
         defect: "",
-        link: 'Nuotrauka ?d?ta ? r?mel? standartiniu dyd?iu 2"x2.67"',
+        link: 'Nuotrauka Ä¯dÄta Ä¯ rÄmelÄ¯ standartiniu dydÅ¾iu 2"x2.67"',
         frame: "",
-        note: "Pastabos ?ra?omos ranka Excelyje",
+        note: "Pastabos raÅ¡omos ranka Excelyje",
       });
       photosSheet.addRow({
         idx: "",
         defect: "",
-        link: "Nuotraukos automati?kai suspaustos eksportuojant (~70% kokyb?, apie 192x256 px).",
+        link: "Nuotraukos automatiÅ¡kai suspaustos eksportuojant (~70% kokybÄ, apie 192x256 px).",
         frame: "",
         note: "",
       });
@@ -384,7 +384,7 @@ export function TaskDetailModal({
         });
       });
 
-      // Komentarai tiesiogiai po nuotraukomis tame pa─Źiame lape
+      // Komentarai tiesiogiai po nuotraukomis tame paÄiame lape
       const commentsStart = (photosSheet.lastRow?.number ?? 1) + 2;
       const commentsHeader = photosSheet.getCell(`A${commentsStart}`);
       commentsHeader.value = "Komentarai";
@@ -487,7 +487,7 @@ export function TaskDetailModal({
                   <button
                     onClick={handleExportTaskToExcel}
                     className="text-blue-600 hover:text-blue-800 p-1 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Eksportuoti ─» Excel"
+                    title="Eksportuoti Ä¯ Excel"
                     disabled={isExporting}
                   >
                     <Download className="h-6 w-6" />
@@ -555,7 +555,7 @@ export function TaskDetailModal({
           </div>
 
           <div className="mt-4 border-t pt-4">
-            <h3 className="text-lg font-semibold mb-2">Apra┼Īymas</h3>
+            <h3 className="text-lg font-semibold mb-2">Aprašymas</h3>
             {isEditing ? (
               <textarea
                 value={newDescription}
@@ -565,7 +565,7 @@ export function TaskDetailModal({
               />
             ) : (
               <p className="text-muted-foreground whitespace-pre-wrap">
-                {currentTask.description || "Apra┼Īymas neprid─Śtas."}
+                {currentTask.description || "Aprašymas nepridėtas."}
               </p>
             )}
           </div>
@@ -585,7 +585,7 @@ export function TaskDetailModal({
                 >
                   <NextImage
                     src={photo.url}
-                    alt="Task photo"
+                    alt="Užduoties nuotrauka"
                     fill
                     sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                     style={{ objectFit: "cover" }}
@@ -667,7 +667,7 @@ export function TaskDetailModal({
                 disabled={!newComment.trim() || addComment.isPending}
                 className="bg-blue-500 text-white px-4 py-2 rounded-lg disabled:bg-gray-400"
               >
-                Si┼│sti
+                SiÅ³sti
               </button>
             </div>
           </div>
@@ -685,7 +685,3 @@ export function TaskDetailModal({
     </>
   );
 }
-
-
-
-

@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect } from "react";
-// PA┼ĀALINTA PROBLEMINE EILUT─¢: import { type FormAction } from "next/dist/server/app-render/entry-point";
+// Pa?alinta problemin? eilut?: import { type FormAction } from "next/dist/server/app-render/entry-point";
 import { signOut } from "next-auth/react";
 import { TaskBoard } from "~/app/_components/post";
 
@@ -15,15 +15,15 @@ type Session = {
     user: SessionUser;
 };
 
-// PATAISYMAS: Naudojame nauj─ģ ServerAction tip─ģ
+// Pataisymas: naudojame nauj? ServerAction tip?
 export function HomeClientContent({ session }: { session: Session }) {
-    // Kodo blokas, skirtas sugadint┼│ slapuk┼│ i┼Īvalymui po AccessDenied klaidos.
+    // Kodo blokas sugadintiems slapukams i?valyti po AccessDenied klaidos.
     useEffect(() => {
         if (typeof window === "undefined") return;
 
         const params = new URLSearchParams(window.location.search);
         if (params.get("error") === "AccessDenied") {
-            // Vengiame galimos kilpos: veikiame tik kart─ģ per seans─ģ.
+            // Vengiame galimos kilpos: veikiame tik kart? per seans?.
             const alreadyHandled = sessionStorage.getItem("accessDeniedHandled");
             if (!alreadyHandled) {
                 sessionStorage.setItem("accessDeniedHandled", "true");

@@ -171,7 +171,7 @@ describe("TaskDetailModal", () => {
     fireEvent.click(screen.getByTitle("Redaguoti"));
     fireEvent.change(screen.getByDisplayValue("Test task"), { target: { value: "Pakeistas" } });
 
-    fireEvent.click(screen.getByAltText("Task photo"));
+    fireEvent.click(screen.getByAltText("Užduoties nuotrauka"));
     expect(screen.getByText("1 / 1")).toBeInTheDocument();
 
     rerender(<TaskDetailModal task={otherTask} onCloseAction={vi.fn()} />);
