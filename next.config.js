@@ -11,12 +11,14 @@ const config = {
             {
                 protocol: "https",
                 hostname: "utfs.io", // Leid┼Šiame rodyti nuotraukas i┼Ī ─Źia
+                hostname: "utfs.io", // Leidžiame rodyti nuotraukas iš čia
             },
         ],
     },
 };
 
 // Naudojame CommonJS sintaks─Ö
+// Naudojame CommonJS sintaksę
 module.exports = config;
 
 module.exports = {

@@ -177,10 +177,15 @@ export function TaskDetailModal({
       ?.flatMap((c) => c.tasks)
       .find((t) => t.id === currentTask.id);
     if (updated) {
-      setCurrentTask(updated);
-      setNewTitle(updated.title);
-      setNewDescription(updated.description ?? "");
-      setNewDate(formatDateTimeLocal(updated.createdAt));
+      // Normalizuojame, kad Photo.taskId būtų string, nes API gali grąžinti null
+      const normalized = {
+        ...updated,
+        photos: updated.photos.map((p) => ({ ...p, taskId: p.taskId ?? currentTask.id })),
+      } as Task;
+      setCurrentTask(normalized);
+      setNewTitle(normalized.title);
+      setNewDescription(normalized.description ?? "");
+      setNewDate(formatDateTimeLocal(normalized.createdAt));
       setExportStatus("Atnaujinta");
     } else {
       setExportStatus("Nepavyko atnaujinti");
@@ -627,7 +632,6 @@ export function TaskDetailModal({
     </>
   );
 }
-
 
 
 
