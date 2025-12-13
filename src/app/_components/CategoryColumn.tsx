@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -53,7 +53,7 @@ export function CategoryColumn({
     },
     onError: (error, _input, context) => {
       if (context?.previous) utils.board.getBoard.setData(undefined, context.previous);
-      alert(`Klaida kuriant užduotį: ${error.message}`);
+      alert(`Klaida kuriant u┼Šduot─»: ${error.message}`);
     },
     onSettled: () => {
       utils.board.getBoard.invalidate();
@@ -66,7 +66,7 @@ export function CategoryColumn({
     const trimmed = title.trim();
     if (!trimmed) return;
     if (!category?.id) {
-      alert("Kategorija nerasta – bandykite perkrauti puslapį.");
+      alert("Kategorija nerasta ŌĆō bandykite perkrauti puslap─».");
       return;
     }
     createTask.mutate({ title: trimmed, categoryId: category.id });
@@ -78,12 +78,12 @@ export function CategoryColumn({
       utils.board.getBoard.invalidate();
     },
     onError: (error) => {
-      alert(`Klaida trinant kategoriją: ${error.message}`);
+      alert(`Klaida trinant kategorij─ģ: ${error.message}`);
     },
   });
 
   const handleDeleteCategory = () => {
-    if (confirm(`Ar tikrai norite ištrinti kategoriją "${category.title}" ir visas joje esančias užduotis?`)) {
+    if (confirm(`Ar tikrai norite i┼Ītrinti kategorij─ģ "${category.title}" ir visas joje esan─Źias u┼Šduotis?`)) {
       deleteCategory.mutate({ categoryId: category.id });
     }
   };
@@ -101,7 +101,7 @@ export function CategoryColumn({
         <button 
           onClick={handleDeleteCategory}
           className="text-gray-400 hover:text-red-500 transition"
-          title="Ištrinti kategoriją"
+          title="I┼Ītrinti kategorij─ģ"
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -122,7 +122,7 @@ export function CategoryColumn({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && safeCreateTask()}
-            placeholder="Užduoties pavadinimas..."
+            placeholder="U┼Šduoties pavadinimas..."
             className="px-3 py-2 border rounded-lg"
           />
           <div className="flex gap-2">
@@ -132,16 +132,16 @@ export function CategoryColumn({
               className="bg-blue-500 text-white px-3 py-1 rounded disabled:bg-gray-400"
               disabled={!title.trim() || createTask.isPending}
             >
-              Pridėti
+              Prid─Śti
             </button>
             <button onClick={() => setIsAdding(false)} className="text-gray-500">
-              Atšaukti
+              At┼Īaukti
             </button>
           </div>
         </div>
       ) : (
         <button onClick={() => setIsAdding(true)} className="text-left text-gray-500 hover:text-gray-700 flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Pridėti užduotį
+          <Plus className="w-4 h-4" /> Prid─Śti u┼Šduot─»
         </button>
       )}
     </div>

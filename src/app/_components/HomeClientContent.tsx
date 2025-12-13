@@ -1,8 +1,8 @@
-// src/app/_components/HomeClientContent.tsx
+﻿// src/app/_components/HomeClientContent.tsx
 "use client";
 
 import { useEffect } from "react";
-// PAŠALINTA PROBLEMINE EILUTĖ: import { type FormAction } from "next/dist/server/app-render/entry-point";
+// PA┼ĀALINTA PROBLEMINE EILUT─¢: import { type FormAction } from "next/dist/server/app-render/entry-point";
 import { signOut } from "next-auth/react";
 import { TaskBoard } from "~/app/_components/post";
 
@@ -15,15 +15,15 @@ type Session = {
     user: SessionUser;
 };
 
-// PATAISYMAS: Naudojame naują ServerAction tipą
+// PATAISYMAS: Naudojame nauj─ģ ServerAction tip─ģ
 export function HomeClientContent({ session }: { session: Session }) {
-    // Kodo blokas, skirtas sugadintų slapukų išvalymui po AccessDenied klaidos.
+    // Kodo blokas, skirtas sugadint┼│ slapuk┼│ i┼Īvalymui po AccessDenied klaidos.
     useEffect(() => {
         if (typeof window === "undefined") return;
 
         const params = new URLSearchParams(window.location.search);
         if (params.get("error") === "AccessDenied") {
-            // Vengiame galimos kilpos: veikiame tik kartą per seansą.
+            // Vengiame galimos kilpos: veikiame tik kart─ģ per seans─ģ.
             const alreadyHandled = sessionStorage.getItem("accessDeniedHandled");
             if (!alreadyHandled) {
                 sessionStorage.setItem("accessDeniedHandled", "true");
@@ -36,7 +36,7 @@ export function HomeClientContent({ session }: { session: Session }) {
         <div className="min-h-screen bg-background">
             <header className="border-b">
                 <div className="container mx-auto px-4 py-6 flex items-center justify-between">
-                    <h1 className="text-3xl font-bold">Mano Užduotys</h1>
+                    <h1 className="text-3xl font-bold">Mano U┼Šduotys</h1>
                     <div className="flex items-center gap-3">
                         <span className="text-sm text-muted-foreground">
                             Sveikas, {session.user.name ?? session.user.email}!

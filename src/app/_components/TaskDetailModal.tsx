@@ -1,4 +1,4 @@
-// src/app/_components/TaskDetailModal.tsx
+﻿// src/app/_components/TaskDetailModal.tsx
 "use client";
 import ExcelJS from "exceljs";
 
@@ -61,7 +61,7 @@ function PhotoGalleryModal({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 bg-white/30 text-white p-2 rounded-full hover:bg-white/50 transition z-10"
-          title="Uždaryti"
+          title="U┼Šdaryti"
         >
           <X className="h-6 w-6" />
         </button>
@@ -69,7 +69,7 @@ function PhotoGalleryModal({
         <button
           onClick={goToPrev}
           className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/30 text-white p-3 rounded-full hover:bg-white/50 transition"
-          title="Ankstesnė"
+          title="Ankstesn─Ś"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -161,7 +161,7 @@ export function TaskDetailModal({
   };
 
   const handleDeletePhoto = (photoId: string) => {
-    if (confirm("Ar tikrai norite ištrinti šią nuotrauką?")) {
+    if (confirm("Ar tikrai norite i┼Ītrinti ┼Īi─ģ nuotrauk─ģ?")) {
       deletePhoto.mutate({ photoId });
     }
   };
@@ -211,7 +211,7 @@ export function TaskDetailModal({
       ctx.drawImage(img, 0, 0, targetW, targetH);
       return canvas.toDataURL("image/jpeg", IMAGE_QUALITY);
     } catch (error) {
-      console.warn("Nepavyko dekompresuoti (suspausti) paveikslo, naudojame originalų", error);
+      console.warn("Nepavyko dekompresuoti (suspausti) paveikslo, naudojame original┼│", error);
       return dataUrl;
     }
   };
@@ -220,7 +220,7 @@ export function TaskDetailModal({
     if (!contentType) return "jpeg";
     if (contentType.includes("png")) return "png";
     if (contentType.includes("gif")) return "gif";
-    // ExcelJS nepalaiko webp, konvertuojame į png
+    // ExcelJS nepalaiko webp, konvertuojame ─» png
     return "jpeg";
   };
 
@@ -247,7 +247,7 @@ export function TaskDetailModal({
     let processed = 0;
     for (let i = 0; i < photos.length; i += batchSize) {
       const batch = photos.slice(i, i + batchSize);
-      setExportStatus(`Atsisiunčiami paveikslai ${Math.min(i + batchSize, photos.length)}/${photos.length}`);
+      setExportStatus(`Atsisiun─Źiami paveikslai ${Math.min(i + batchSize, photos.length)}/${photos.length}`);
       const batchResults = await Promise.all(
         batch.map(async (photo) => {
           const viaProxy = await fetchImageBase64(photo.url);
@@ -256,12 +256,12 @@ export function TaskDetailModal({
       );
       results.push(...batchResults);
       processed += batch.length;
-      setExportStatus(`Atsisiunčiami paveikslai ${processed}/${photos.length}`);
+      setExportStatus(`Atsisiun─Źiami paveikslai ${processed}/${photos.length}`);
     }
     return results;
   };
 
-  // Eksportas: įterpia duomenis + nuotraukas į .xlsx (exceljs, klientas)
+  // Eksportas: ─»terpia duomenis + nuotraukas ─» .xlsx (exceljs, klientas)
   const handleExportTaskToExcel = async () => {
     setIsExporting(true);
     setExportStatus("Ruosiamas eksportas...");
@@ -338,7 +338,7 @@ export function TaskDetailModal({
         });
       });
 
-      // Komentarai tiesiogiai po nuotraukomis tame pačiame lape
+      // Komentarai tiesiogiai po nuotraukomis tame pa─Źiame lape
       const commentsStart = (photosSheet.lastRow?.number ?? 1) + 2;
       const commentsHeader = photosSheet.getCell(`A${commentsStart}`);
       commentsHeader.value = "Komentarai";
@@ -424,14 +424,14 @@ export function TaskDetailModal({
                   <button
                     onClick={handleSave}
                     className="text-green-600 hover:text-green-700 p-1 rounded transition"
-                    title="Išsaugoti"
+                    title="I┼Īsaugoti"
                   >
                     <Save className="h-6 w-6" />
                   </button>
                   <button
                     onClick={handleCancel}
                     className="text-red-500 hover:text-red-700 p-1 rounded transition"
-                    title="Atšaukti"
+                    title="At┼Īaukti"
                   >
                     <X className="h-6 w-6" />
                   </button>
@@ -441,7 +441,7 @@ export function TaskDetailModal({
                   <button
                     onClick={handleExportTaskToExcel}
                     className="text-blue-600 hover:text-blue-800 p-1 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Eksportuoti į Excel"
+                    title="Eksportuoti ─» Excel"
                     disabled={isExporting}
                   >
                     <Download className="h-6 w-6" />
@@ -459,7 +459,7 @@ export function TaskDetailModal({
               <button
                 onClick={handleRefresh}
                 className="text-blue-500 hover:text-blue-700 p-1 rounded transition"
-                title="Atnaujinti modalą"
+                title="Atnaujinti modal─ģ"
                 disabled={isExporting}
               >
                 <RefreshCcw className="h-6 w-6" />
@@ -489,7 +489,7 @@ export function TaskDetailModal({
                 className="border rounded px-2 py-1 text-sm"
               >
                 <option value="open">Nebaigta</option>
-                <option value="done">Užbaigta</option>
+                <option value="done">U┼Šbaigta</option>
               </select>
             </div>
             <div className="flex items-center gap-2">
@@ -505,17 +505,17 @@ export function TaskDetailModal({
           </div>
 
           <div className="mt-4 border-t pt-4">
-            <h3 className="text-lg font-semibold mb-2">Aprašymas</h3>
+            <h3 className="text-lg font-semibold mb-2">Apra┼Īymas</h3>
             {isEditing ? (
               <textarea
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
-                placeholder="Pridėti išsamų aprašymą..."
+                placeholder="Prid─Śti i┼Īsam┼│ apra┼Īym─ģ..."
                 className="w-full p-2 border rounded-lg min-h-24"
               />
             ) : (
               <p className="text-muted-foreground whitespace-pre-wrap">
-                {currentTask.description || "Aprašymas nepridėtas."}
+                {currentTask.description || "Apra┼Īymas neprid─Śtas."}
               </p>
             )}
           </div>
@@ -546,7 +546,7 @@ export function TaskDetailModal({
                       handleDeletePhoto(photo.id);
                     }}
                     className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Ištrinti nuotrauką"
+                    title="I┼Ītrinti nuotrauk─ģ"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -600,7 +600,7 @@ export function TaskDetailModal({
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleCommentSubmit()}
-                placeholder="Parašykite komentarą..."
+                placeholder="Para┼Īykite komentar─ģ..."
                 className="flex-grow p-2 border rounded-lg"
                 disabled={addComment.isPending}
               />
@@ -609,7 +609,7 @@ export function TaskDetailModal({
                 disabled={!newComment.trim() || addComment.isPending}
                 className="bg-blue-500 text-white px-4 py-2 rounded-lg disabled:bg-gray-400"
               >
-                Siųsti
+                Si┼│sti
               </button>
             </div>
           </div>

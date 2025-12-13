@@ -1,4 +1,4 @@
-import { createEnv } from "@t3-oss/env-nextjs";
+﻿import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
 export const env = createEnv({
@@ -10,10 +10,10 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: z.string().min(1),
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     
-    // PATAISYMAS: Pridėtas leidžiamų el. pašto adresų sąrašas
+    // PATAISYMAS: Prid─Śtas leid┼Šiam┼│ el. pa┼Īto adres┼│ s─ģra┼Īas
     ALLOWED_EMAILS: z.string().optional(),
 
-    // GRAŽINAME UPLOADTHING KINTAMUOSIUS:
+    // GRA┼ĮINAME UPLOADTHING KINTAMUOSIUS:
     UPLOADTHING_SECRET: z.string().min(1),
     UPLOADTHING_APP_ID: z.string().min(1),
     IMAGE_PROXY_ALLOWED_HOSTS: z.string().optional(),
@@ -31,10 +31,10 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     NODE_ENV: process.env.NODE_ENV,
     
-    // PATAISYMAS: Pridėtas ALLOWED_EMAILS
+    // PATAISYMAS: Prid─Śtas ALLOWED_EMAILS
     ALLOWED_EMAILS: process.env.ALLOWED_EMAILS,
 
-    // GRAŽINAME:
+    // GRA┼ĮINAME:
     UPLOADTHING_SECRET: process.env.UPLOADTHING_SECRET,
     UPLOADTHING_APP_ID: process.env.UPLOADTHING_APP_ID,
     IMAGE_PROXY_ALLOWED_HOSTS: process.env.IMAGE_PROXY_ALLOWED_HOSTS,

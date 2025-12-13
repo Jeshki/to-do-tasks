@@ -1,5 +1,5 @@
-// src/app/page.tsx
-// NĖRA "use client" - TAI YRA SERVER COMPONENT
+﻿// src/app/page.tsx
+// N─¢RA "use client" - TAI YRA SERVER COMPONENT
 
 import { auth } from "../server/auth";
 import { redirect } from "next/navigation";
@@ -13,6 +13,6 @@ export default async function Home() {
         redirect("/api/auth/signin");
     }
 
-    // Perduodame sesijos duomenis IR Serverio veiksmą kaip prop'ą
+    // Perduodame sesijos duomenis IR Serverio veiksm─ģ kaip prop'─ģ
     return <HomeClientContent session={session} />;
 }

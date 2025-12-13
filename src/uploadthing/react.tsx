@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchStreamLink } from "@trpc/client";
@@ -44,7 +44,7 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
 	const [trpcClient] = useState(() =>
 		api.createClient({
 			links: [
-				// Vengiame loggerio, kad nekeltų konsolės triukšmo dev režime
+				// Vengiame loggerio, kad nekelt┼│ konsol─Śs triuk┼Īmo dev re┼Šime
 				httpBatchStreamLink({
 					transformer: SuperJSON,
 					url: `${getBaseUrl()}/api/trpc`,
@@ -67,19 +67,19 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
 	);
 }
 
-// PATAISYMAS: Ši funkcija buvo klaidinga. NextAuth.js jau nurodo NEXTAUTH_URL,
-// o Next.js automatiškai nustato VERCEL_URL ir PORT aplinkos kintamuosius.
-// Norint prieiti prie jų kliente, jie turi būti pažymėti kaip NEXT_PUBLIC_
+// PATAISYMAS: ┼Āi funkcija buvo klaidinga. NextAuth.js jau nurodo NEXTAUTH_URL,
+// o Next.js automati┼Īkai nustato VERCEL_URL ir PORT aplinkos kintamuosius.
+// Norint prieiti prie j┼│ kliente, jie turi b┼½ti pa┼Šym─Śti kaip NEXT_PUBLIC_
 // arba tiesiog geriau naudoti window.location.origin
 function getBaseUrl() {
 	if (typeof window !== "undefined") return window.location.origin;
-    // Kad išvengtume kintamųjų nuotėkio į klientą, naudojame tiesioginį kintamąjį
+    // Kad i┼Īvengtume kintam┼│j┼│ nuot─Śkio ─» klient─ģ, naudojame tiesiogin─» kintam─ģj─»
     // (bet tik tuo atveju, jei jis tikrai egzistuoja serveryje).
-    // Turbopack yra labai griežtas, todėl grąžiname tik window.location.origin kliente.
+    // Turbopack yra labai grie┼Štas, tod─Śl gr─ģ┼Šiname tik window.location.origin kliente.
     
-    // Serverio pusėje (SSR):
+    // Serverio pus─Śje (SSR):
     if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
 	
-    // Jei Vercel aplinkos kintamieji nepasiekiami, grąžiname numatytąjį:
+    // Jei Vercel aplinkos kintamieji nepasiekiami, gr─ģ┼Šiname numatyt─ģj─»:
     return `http://localhost:${process.env.PORT ?? 3000}`;
 }

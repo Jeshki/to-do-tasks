@@ -1,4 +1,4 @@
-// next.config.js
+﻿// next.config.js
 
 // The import "./src/env.js" line is removed as it causes a SyntaxError in CJS mode.
 // The environment variables defined in src/env.js are typically loaded automatically 
@@ -10,13 +10,13 @@ const config = {
         remotePatterns: [
             {
                 protocol: "https",
-                hostname: "utfs.io", // Leidžiame rodyti nuotraukas iš čia
+                hostname: "utfs.io", // Leid┼Šiame rodyti nuotraukas i┼Ī ─Źia
             },
         ],
     },
 };
 
-// Naudojame CommonJS sintaksę
+// Naudojame CommonJS sintaks─Ö
 module.exports = config;
 
 module.exports = {
