@@ -36,7 +36,7 @@ export function HomeClientContent({ session }: { session: Session }) {
         <div className="min-h-screen bg-background">
             <header className="border-b">
                 <div className="container mx-auto px-4 py-6 flex items-center justify-between">
-                    <h1 className="text-3xl font-bold">Mano U┼Šduotys</h1>
+                    <h1 className="text-3xl font-bold">Mano užduotys</h1>
                     <div className="flex items-center gap-3">
                         <span className="text-sm text-muted-foreground">
                             Sveikas, {session.user.name ?? session.user.email}!

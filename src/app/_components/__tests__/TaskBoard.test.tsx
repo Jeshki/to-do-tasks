@@ -47,8 +47,24 @@ vi.mock("@dnd-kit/sortable", () => ({
   sortableKeyboardCoordinates: vi.fn(),
 }));
 vi.mock("../CategoryColumn", () => ({
-  CategoryColumn: ({ category }: { category: { id: string; title: string; tasks: unknown[] } }) => (
-    <div data-testid="category-column">{category.title}</div>
+  CategoryColumn: ({
+    category,
+    onTaskSelectAction,
+  }: {
+    category: { id: string; title: string; tasks: { id: string; title: string }[] };
+    onTaskSelectAction: (task: any) => void;
+  }) => (
+    <div data-testid="category-column" onClick={() => onTaskSelectAction(category.tasks[0])}>
+      {category.title}
+    </div>
+  ),
+}));
+vi.mock("../TaskDetailModal", () => ({
+  TaskDetailModal: ({ task, onCloseAction }: { task: any; onCloseAction: () => void }) => (
+    <div data-testid="task-detail-modal">
+      <span>{task.title}</span>
+      <button onClick={onCloseAction}>Close</button>
+    </div>
   ),
 }));
 
@@ -76,6 +92,12 @@ describe("TaskBoard", () => {
     expect(columns).toHaveLength(2);
     expect(columns[0]).toHaveTextContent("Pirmas");
     expect(columns[1]).toHaveTextContent("Antras");
+  });
+
+  it("atveria detaliu modala paspaudus uzduoti", () => {
+    render(<TaskBoard />);
+    fireEvent.click(screen.getAllByTestId("category-column")[0]);
+    expect(screen.getByTestId("task-detail-modal")).toHaveTextContent("Task 1");
   });
 
   it("sukuria naują stulpelį iš prompt reikšmės", () => {

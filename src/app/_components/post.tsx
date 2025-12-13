@@ -11,6 +11,7 @@ import {
 } from "@dnd-kit/core";
 import { api } from "~/uploadthing/react";
 import { CategoryColumn } from "./CategoryColumn";
+import { TaskDetailModal } from "./TaskDetailModal";
 
 export type Comment = {
   id: string;
@@ -58,12 +59,24 @@ export function TaskBoard() {
   });
 
   const [localCategories, setLocalCategories] = useState<Category[]>([]);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   useEffect(() => {
     if (categoriesData) {
       setLocalCategories(categoriesData as Category[]);
     }
   }, [categoriesData]);
+
+  // Keep modal data fresh after board refetches or optimistic updates.
+  useEffect(() => {
+    if (!selectedTask) return;
+    const updated = localCategories
+      .flatMap((c) => c.tasks)
+      .find((task) => task.id === selectedTask.id);
+    if (updated && updated !== selectedTask) {
+      setSelectedTask(updated);
+    }
+  }, [localCategories, selectedTask]);
 
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -103,6 +116,9 @@ export function TaskBoard() {
     updateTaskPosition.mutate({ taskId, newCategoryId: target.id, newOrder });
   };
 
+  const handleTaskSelect = (task: Task) => setSelectedTask(task);
+  const handleCloseModal = () => setSelectedTask(null);
+
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
@@ -118,10 +134,14 @@ export function TaskBoard() {
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <div className="flex gap-4 items-start overflow-x-auto">
           {localCategories?.map((cat) => (
-            <CategoryColumn key={cat.id} category={cat} onTaskSelectAction={() => {}} />
+            <CategoryColumn key={cat.id} category={cat} onTaskSelectAction={handleTaskSelect} />
           ))}
         </div>
       </DndContext>
+
+      {selectedTask ? (
+        <TaskDetailModal task={selectedTask} onCloseAction={handleCloseModal} />
+      ) : null}
     </div>
   );
 }

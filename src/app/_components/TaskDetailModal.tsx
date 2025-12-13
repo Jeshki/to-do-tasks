@@ -18,7 +18,15 @@ import type { Task } from "./post";
 import { UploadButton } from "../../utils/uploadthing";
 import { api } from "~/uploadthing/react";
 import NextImage from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+const formatDateTimeLocal = (value: Date | string | null | undefined) => {
+  if (!value) return "";
+  const d = new Date(value);
+  const tzOffsetMinutes = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - tzOffsetMinutes * 60 * 1000);
+  return local.toISOString().slice(0, 16);
+};
 
 // Pagalbinis komponentas: viso ekrano galerija
 function PhotoGalleryModal({
@@ -103,17 +111,19 @@ export function TaskDetailModal({
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState(currentTask.title);
   const [newDescription, setNewDescription] = useState(currentTask.description ?? "");
-  const formatDateTimeLocal = (value: Date | string | null | undefined) => {
-    if (!value) return "";
-    const d = new Date(value);
-    const tzOffsetMinutes = d.getTimezoneOffset();
-    const local = new Date(d.getTime() - tzOffsetMinutes * 60 * 1000);
-    return local.toISOString().slice(0, 16);
-  };
   const [newDate, setNewDate] = useState(formatDateTimeLocal(currentTask.createdAt));
   const [newComment, setNewComment] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
+
+  // Sync local state when a different task is opened.
+  useEffect(() => {
+    setCurrentTask(task);
+    setNewTitle(task.title);
+    setNewDescription(task.description ?? "");
+    setNewDate(formatDateTimeLocal(task.createdAt));
+    setSelectedPhotoIndex(null);
+  }, [task]);
 
   const invalidate = () => utils.board.getBoard.invalidate();
   const { refetch: refetchBoard } = api.board.getBoard.useQuery(undefined, { enabled: false });

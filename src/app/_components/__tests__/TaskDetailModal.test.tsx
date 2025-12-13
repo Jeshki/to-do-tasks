@@ -86,6 +86,15 @@ vi.mock("~/uploadthing/react", () => ({
     ...baseTask,
     photos: [{ id: "p1", url: "https://example.com/pic.jpg", categoryId: null, taskId: "t1" }],
   };
+  const otherTask: Task = {
+    ...baseTask,
+    id: "t2",
+    title: "Kita uzduotis",
+    description: "kitas aprasymas",
+    photos: [],
+    comments: [],
+    createdAt: new Date("2025-02-02T00:00:00Z"),
+  };
 
 describe("TaskDetailModal", () => {
   beforeEach(() => {
@@ -154,6 +163,23 @@ describe("TaskDetailModal", () => {
     await waitFor(() => {
       expect(addCommentMock).toHaveBeenCalledWith({ taskId: "t1", text: "naujas komentaras" });
     });
+  });
+
+  it("persijungus i kita uzduoti atnaujina laukus ir uzdaro galerija", async () => {
+    const { rerender } = render(<TaskDetailModal task={taskWithPhoto} onCloseAction={vi.fn()} />);
+
+    fireEvent.click(screen.getByTitle("Redaguoti"));
+    fireEvent.change(screen.getByDisplayValue("Test task"), { target: { value: "Pakeistas" } });
+
+    fireEvent.click(screen.getByAltText("Task photo"));
+    expect(screen.getByText("1 / 1")).toBeInTheDocument();
+
+    rerender(<TaskDetailModal task={otherTask} onCloseAction={vi.fn()} />);
+
+    expect(screen.getByDisplayValue("Kita uzduotis")).toBeInTheDocument();
+    const photoHeaders = screen.getAllByText((_, el) => Boolean(el?.textContent && el.textContent.includes("Nuotraukos (0)")));
+    expect(photoHeaders.length).toBeGreaterThan(0);
+    expect(screen.queryByText("1 / 1")).not.toBeInTheDocument();
   });
 
   it("cancel grazina ankstesnius laukus", async () => {
