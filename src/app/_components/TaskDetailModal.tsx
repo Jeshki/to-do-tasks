@@ -562,6 +562,14 @@ export function TaskDetailModal({
             <div className="mt-4">
               <UploadButton
                 endpoint="imageUploader"
+                content={{
+                  button({ ready }) {
+                    return ready ? "Pasirinkti nuotraukas" : "Ruošiamasi...";
+                  },
+                  allowedContent() {
+                    return "Leidžiama: iki 1GB vienam failui, iki 900 nuotraukų, jpg/png/gif";
+                  },
+                }}
                 appearance={{
                   button:
                     "bg-blue-500 text-white px-3 py-1 text-sm rounded-lg hover:bg-blue-600 transition h-10 ut-uploading:bg-gray-400 ut-uploading:hover:bg-gray-400",
@@ -632,7 +640,6 @@ export function TaskDetailModal({
     </>
   );
 }
-
 
 
 
