@@ -89,8 +89,8 @@ vi.mock("~/uploadthing/react", () => ({
   const otherTask: Task = {
     ...baseTask,
     id: "t2",
-    title: "Kita uzduotis",
-    description: "kitas aprasymas",
+    title: "Kita užduotis",
+    description: "kitas aprašymas",
     photos: [],
     comments: [],
     createdAt: new Date("2025-02-02T00:00:00Z"),
@@ -107,14 +107,14 @@ describe("TaskDetailModal", () => {
     invalidateMock.mockReset();
   });
 
-  it("rodo pavadinima ir leidzia atidaryti redagavima", async () => {
+  it("rodo pavadinimą ir leidžia atidaryti redagavimą", async () => {
     render(<TaskDetailModal task={baseTask} onCloseAction={vi.fn()} />);
     expect(screen.getByText("Test task")).toBeInTheDocument();
     fireEvent.click(screen.getByTitle("Redaguoti"));
     expect(screen.getByDisplayValue("Test task")).toBeInTheDocument();
   });
 
-  it("perjungia atlikimo busena per select", async () => {
+  it("perjungia atlikimo būseną per select", async () => {
     render(<TaskDetailModal task={baseTask} onCloseAction={vi.fn()} />);
     const select = screen.getByDisplayValue("Nebaigta") as HTMLSelectElement;
     fireEvent.change(select, { target: { value: "done" } });
@@ -123,7 +123,7 @@ describe("TaskDetailModal", () => {
     });
   });
 
-  it("leidzia keisti data ir siuncia i updateTaskDetails", async () => {
+  it("leidžia keisti datą ir siunčia į updateTaskDetails", async () => {
     render(<TaskDetailModal task={baseTask} onCloseAction={vi.fn()} />);
     fireEvent.click(screen.getByTitle("Redaguoti"));
     const dateInput = document.querySelector('input[type="datetime-local"]') as HTMLInputElement;
@@ -151,7 +151,7 @@ describe("TaskDetailModal", () => {
     });
   });
 
-  it("pateikia komentara tik jei ne tuscias", async () => {
+  it("pateikia komentarą tik jei ne tuščias", async () => {
     render(<TaskDetailModal task={baseTask} onCloseAction={vi.fn()} />);
     const input = screen.getByPlaceholderText("Parašykite komentarą...") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "   " } });
@@ -176,7 +176,7 @@ describe("TaskDetailModal", () => {
 
     rerender(<TaskDetailModal task={otherTask} onCloseAction={vi.fn()} />);
 
-    expect(screen.getByDisplayValue("Kita uzduotis")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Kita užduotis")).toBeInTheDocument();
     const photoHeaders = screen.getAllByText((_, el) => Boolean(el?.textContent && el.textContent.includes("Nuotraukos (0)")));
     expect(photoHeaders.length).toBeGreaterThan(0);
     expect(screen.queryByText("1 / 1")).not.toBeInTheDocument();

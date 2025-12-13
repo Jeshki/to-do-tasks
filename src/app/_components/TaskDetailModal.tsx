@@ -132,17 +132,48 @@ export function TaskDetailModal({
   const IMAGE_TARGET_HEIGHT = 256; // ~2.67" at 96 DPI
   const IMAGE_QUALITY = 0.7; // lossy compression to shrink export
 
-  const addPhotoToTask = api.board.addPhotoToTask.useMutation({ onSuccess: invalidate });
-  const deletePhoto = api.board.deletePhotoFromTask.useMutation({ onSuccess: invalidate });
+  const addPhotoToTask = api.board.addPhotoToTask.useMutation({
+    onSuccess: (photo) => {
+      setCurrentTask((prev) => ({
+        ...prev,
+        photos: [...prev.photos, { ...photo, taskId: photo.taskId ?? prev.id }],
+      }));
+      invalidate();
+    },
+  });
+  const deletePhoto = api.board.deletePhotoFromTask.useMutation({
+    onSuccess: (_res, variables) => {
+      setCurrentTask((prev) => ({
+        ...prev,
+        photos: prev.photos.filter((p) => p.id !== variables.photoId),
+      }));
+      invalidate();
+    },
+  });
   const updateDetails = api.board.updateTaskDetails.useMutation({
     onSuccess: () => {
+      setCurrentTask((prev) => ({
+        ...prev,
+        title: newTitle,
+        description: newDescription,
+        createdAt: newDate ? new Date(newDate) : prev.createdAt,
+      }));
       invalidate();
       setIsEditing(false);
     },
   });
-  const toggleCompletion = api.board.toggleTaskCompletion.useMutation({ onSuccess: invalidate });
+  const toggleCompletion = api.board.toggleTaskCompletion.useMutation({
+    onSuccess: (_data, variables) => {
+      setCurrentTask((prev) => ({ ...prev, completed: variables.completed }));
+      invalidate();
+    },
+  });
   const addComment = api.board.addCommentToTask.useMutation({
-    onSuccess: () => {
+    onSuccess: (created) => {
+      setCurrentTask((prev) => ({
+        ...prev,
+        comments: [...prev.comments, created],
+      }));
       invalidate();
       setNewComment("");
     },
@@ -165,9 +196,9 @@ export function TaskDetailModal({
   };
 
   const handleCommentSubmit = () => {
-    if (newComment.trim()) {
-      addComment.mutate({ taskId: currentTask.id, text: newComment.trim() });
-    }
+    const trimmed = newComment.trim();
+    if (!trimmed) return;
+    addComment.mutate({ taskId: currentTask.id, text: trimmed });
   };
 
   const handleDeletePhoto = (photoId: string) => {
@@ -288,11 +319,11 @@ export function TaskDetailModal({
       // Lapai
       const infoSheet = workbook.addWorksheet("Informacija");
       infoSheet.addRows([
-        ["Uzdutis", currentTask.title],
-        ["Aprasymas", currentTask.description ?? ""],
-        ["Busena", currentTask.completed ? "Atlikta" : "Nebaigta"],
-        ["Nuotrauku skaicius", currentTask.photos.length],
-        ["Komentaru skaicius", currentTask.comments.length],
+        ["Užduotis", currentTask.title],
+        ["Aprašymas", currentTask.description ?? ""],
+        ["Būsena", currentTask.completed ? "Atlikta" : "Nebaigta"],
+        ["Nuotraukų skaičius", currentTask.photos.length],
+        ["Komentarų skaičius", currentTask.comments.length],
       ]);
 
       // Nuotraukos su suspaudimu (per proxy + canvas) ir papildoma info
@@ -314,7 +345,7 @@ export function TaskDetailModal({
           defect: currentTask.title,
           link: `Foto ${idx + 1}`,
           frame: "",
-          note: "Pastabos irasomos ranka Excelyje",
+          note: "Pastabos ?ra?omos ranka Excelyje",
         });
         const linkCell = row.getCell("link");
         linkCell.value = { text: `Foto ${idx + 1}`, hyperlink: photo.url };
@@ -335,14 +366,14 @@ export function TaskDetailModal({
       photosSheet.addRow({
         idx: "",
         defect: "",
-        link: 'Nuotrauka ifitinta i remeli standartiniu dydziu 2"x2.67"',
+        link: 'Nuotrauka ?d?ta ? r?mel? standartiniu dyd?iu 2"x2.67"',
         frame: "",
-        note: "Pastabos irasomos ranka Excelyje",
+        note: "Pastabos ?ra?omos ranka Excelyje",
       });
       photosSheet.addRow({
         idx: "",
         defect: "",
-        link: "Foto automatiskai suspaustos eksportuojant (~70% kokybe, apie 192x256 px).",
+        link: "Nuotraukos automati?kai suspaustos eksportuojant (~70% kokyb?, apie 192x256 px).",
         frame: "",
         note: "",
       });
@@ -496,10 +527,14 @@ export function TaskDetailModal({
 
           <div className="mb-4 flex flex-col md:flex-row gap-3">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Busena:</span>
+              <span className="text-sm font-medium">Būsena:</span>
               <select
                 value={currentTask.completed ? "done" : "open"}
-                onChange={(e) => toggleCompletion.mutate({ taskId: currentTask.id, completed: e.target.value === "done" })}
+                onChange={(e) => {
+                  const completed = e.target.value === "done";
+                  setCurrentTask((prev) => ({ ...prev, completed }));
+                  toggleCompletion.mutate({ taskId: currentTask.id, completed });
+                }}
                 disabled={toggleCompletion.isPending}
                 className="border rounded px-2 py-1 text-sm"
               >
