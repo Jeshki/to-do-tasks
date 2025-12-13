@@ -1,11 +1,8 @@
-﻿"use client";
+"use client";
 
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { api } from "~/uploadthing/react";
 import { type Category, type Task } from "./post";
@@ -18,9 +15,7 @@ export function CategoryColumn({
   category: Category;
   onTaskSelectAction: (task: Task) => void;
 }) {
-  const { setNodeRef } = useDroppable({
-    id: category.id,
-  });
+  const { setNodeRef } = useDroppable({ id: category.id });
   const utils = api.useUtils();
   const [isAdding, setIsAdding] = useState(false);
   const [title, setTitle] = useState("");
@@ -53,7 +48,7 @@ export function CategoryColumn({
     },
     onError: (error, _input, context) => {
       if (context?.previous) utils.board.getBoard.setData(undefined, context.previous);
-      alert(`Klaida kuriant u┼Šduot─»: ${error.message}`);
+      alert(`Klaida kuriant užduotį: ${error.message}`);
     },
     onSettled: () => {
       utils.board.getBoard.invalidate();
@@ -66,50 +61,45 @@ export function CategoryColumn({
     const trimmed = title.trim();
     if (!trimmed) return;
     if (!category?.id) {
-      alert("Kategorija nerasta ŌĆō bandykite perkrauti puslap─».");
+      alert("Kategorija nerasta – bandykite perkrauti puslapį.");
       return;
     }
     createTask.mutate({ title: trimmed, categoryId: category.id });
   };
 
-  // Mutacija kategorijos trynimui
   const deleteCategory = api.board.deleteCategory.useMutation({
     onSuccess: () => {
       utils.board.getBoard.invalidate();
     },
     onError: (error) => {
-      alert(`Klaida trinant kategorij─ģ: ${error.message}`);
+      alert(`Klaida trinant kategoriją: ${error.message}`);
     },
   });
 
   const handleDeleteCategory = () => {
-    if (confirm(`Ar tikrai norite i┼Ītrinti kategorij─ģ "${category.title}" ir visas joje esan─Źias u┼Šduotis?`)) {
+    if (confirm(`Ar tikrai norite ištrinti kategoriją "${category.title}" ir visas joje esančias užduotis?`)) {
       deleteCategory.mutate({ categoryId: category.id });
     }
   };
 
-
   return (
-    <div
-      ref={setNodeRef}
-      className="w-80 rounded-xl bg-gray-50 p-4 flex flex-col gap-4"
-    >
+    <div ref={setNodeRef} className="w-80 rounded-xl bg-gray-50 p-4 flex flex-col gap-4">
       <div className="flex justify-between items-center">
         <h2 className="font-semibold text-lg">
           {category.title} ({category.tasks.length})
         </h2>
-        <button 
+        <button
           onClick={handleDeleteCategory}
           className="text-gray-400 hover:text-red-500 transition"
-          title="I┼Ītrinti kategorij─ģ"
+          title="Ištrinti kategoriją"
         >
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
 
-      <SortableContext items={category.tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={category.tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
         <div className="flex flex-col gap-3">
-          {category.tasks.map(task => (
+          {category.tasks.map((task) => (
             <TaskItem key={task.id} task={task} onTaskSelectAction={onTaskSelectAction} />
           ))}
         </div>
@@ -122,7 +112,7 @@ export function CategoryColumn({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && safeCreateTask()}
-            placeholder="U┼Šduoties pavadinimas..."
+            placeholder="Užduoties pavadinimas..."
             className="px-3 py-2 border rounded-lg"
           />
           <div className="flex gap-2">
@@ -132,18 +122,23 @@ export function CategoryColumn({
               className="bg-blue-500 text-white px-3 py-1 rounded disabled:bg-gray-400"
               disabled={!title.trim() || createTask.isPending}
             >
-              Prid─Śti
+              Pridėti
             </button>
             <button onClick={() => setIsAdding(false)} className="text-gray-500">
-              At┼Īaukti
+              Atšaukti
             </button>
           </div>
         </div>
       ) : (
-        <button onClick={() => setIsAdding(true)} className="text-left text-gray-500 hover:text-gray-700 flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Prid─Śti u┼Šduot─»
+        <button
+          onClick={() => setIsAdding(true)}
+          className="text-left text-gray-500 hover:text-gray-700 flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" /> Pridėti užduotį
         </button>
       )}
     </div>
   );
 }
+
+

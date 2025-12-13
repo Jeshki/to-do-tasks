@@ -424,14 +424,14 @@ export function TaskDetailModal({
                   <button
                     onClick={handleSave}
                     className="text-green-600 hover:text-green-700 p-1 rounded transition"
-                    title="I┼Īsaugoti"
+                    title="Išsaugoti"
                   >
                     <Save className="h-6 w-6" />
                   </button>
                   <button
                     onClick={handleCancel}
                     className="text-red-500 hover:text-red-700 p-1 rounded transition"
-                    title="At┼Īaukti"
+                    title="Atšaukti"
                   >
                     <X className="h-6 w-6" />
                   </button>
@@ -459,7 +459,7 @@ export function TaskDetailModal({
               <button
                 onClick={handleRefresh}
                 className="text-blue-500 hover:text-blue-700 p-1 rounded transition"
-                title="Atnaujinti modal─ģ"
+                title="Atnaujinti modalą"
                 disabled={isExporting}
               >
                 <RefreshCcw className="h-6 w-6" />
@@ -510,7 +510,7 @@ export function TaskDetailModal({
               <textarea
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
-                placeholder="Prid─Śti i┼Īsam┼│ apra┼Īym─ģ..."
+                placeholder="Parašykite komentarą..."
                 className="w-full p-2 border rounded-lg min-h-24"
               />
             ) : (
@@ -600,7 +600,7 @@ export function TaskDetailModal({
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleCommentSubmit()}
-                placeholder="Para┼Īykite komentar─ģ..."
+                placeholder="Parašykite komentarą..."
                 className="flex-grow p-2 border rounded-lg"
                 disabled={addComment.isPending}
               />
@@ -627,3 +627,9 @@ export function TaskDetailModal({
     </>
   );
 }
+
+
+
+
+
+
