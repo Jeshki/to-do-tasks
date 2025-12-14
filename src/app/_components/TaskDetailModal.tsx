@@ -115,6 +115,8 @@ export function TaskDetailModal({
   const [newComment, setNewComment] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
 
   // Sync local state when a different task is opened.
   useEffect(() => {
@@ -123,6 +125,8 @@ export function TaskDetailModal({
     setNewDescription(task.description ?? "");
     setNewDate(formatDateTimeLocal(task.createdAt));
     setSelectedPhotoIndex(null);
+    setIsUploadingPhotos(false);
+    setUploadProgress(null);
   }, [task]);
 
   const invalidate = () => utils.board.getBoard.invalidate();
@@ -234,6 +238,21 @@ export function TaskDetailModal({
     setTimeout(() => setExportStatus(null), 2000);
   };
 
+  const resetUploadState = () => {
+    setIsUploadingPhotos(false);
+    setUploadProgress(null);
+  };
+
+  const handleUploadBegin = () => {
+    setIsUploadingPhotos(true);
+    setUploadProgress(0);
+  };
+
+  const handleUploadProgress = (progress: number) => {
+    setIsUploadingPhotos(true);
+    setUploadProgress(progress);
+  };
+
   const loadImageFromDataUrl = (dataUrl: string) =>
     new Promise<HTMLImageElement>((resolve, reject) => {
       const img = new window.Image();
@@ -266,7 +285,7 @@ export function TaskDetailModal({
     if (!contentType) return "jpeg";
     if (contentType.includes("png")) return "png";
     if (contentType.includes("gif")) return "gif";
-    // ExcelJS nepalaiko webp, konvertuojame Ä¯ png
+    // ExcelJS nepalaiko webp, konvertuojame i png
     return "jpeg";
   };
 
@@ -608,31 +627,55 @@ export function TaskDetailModal({
               <UploadButton
                 endpoint="imageUploader"
                 content={{
-                  button({ ready }) {
-                    return ready ? "Pasirinkti nuotraukas" : "Ruošiamasi...";
+                  button({ ready, isUploading, uploadProgress: btnProgress }) {
+                    if (!ready) return "Ruošiamasi...";
+                    if (isUploading) return `Įkeliama ${Math.round(btnProgress ?? uploadProgress ?? 0)}%`;
+                    return "Pasirinkti nuotraukas";
                   },
-                  allowedContent() {
+                  allowedContent({ isUploading, uploadProgress: btnProgress }) {
+                    if (isUploading) {
+                      return `Progresas: ${Math.round(btnProgress ?? uploadProgress ?? 0)}%`;
+                    }
                     return "Leidžiama: iki 1GB vienam failui, iki 900 nuotraukų, jpg/png/gif";
                   },
                 }}
                 appearance={{
-                  button:
-                    "bg-blue-500 text-white px-3 py-1 text-sm rounded-lg hover:bg-blue-600 transition h-10 ut-uploading:bg-gray-400 ut-uploading:hover:bg-gray-400",
-                  container: "w-full flex justify-start items-center",
-                  allowedContent: "text-xs text-muted-foreground ml-3",
+                  button: ({ isUploading }) =>
+                    `px-3 py-1 text-sm rounded-lg transition h-10 text-white ${
+                      isUploading ? "bg-red-600 hover:bg-red-700" : "bg-blue-500 hover:bg-blue-600"
+                    }`,
+                  container: "w-full flex justify-start items-center gap-2",
+                  allowedContent: ({ isUploading }) =>
+                    `text-xs ml-3 ${isUploading ? "text-red-700 font-semibold" : "text-muted-foreground"}`,
                 }}
+                onUploadBegin={handleUploadBegin}
+                onUploadProgress={handleUploadProgress}
                 onClientUploadComplete={(res) => {
+                  setUploadProgress(100);
                   res?.forEach((file) => {
                     addPhotoToTask.mutate({
                       taskId: currentTask.id,
                       url: file.url,
                     });
                   });
+                  resetUploadState();
                 }}
                 onUploadError={(error: Error) => {
+                  resetUploadState();
                   alert(`KLAIDA! ${error.message}`);
                 }}
               />
+              {isUploadingPhotos && (
+                <div className="mt-2 flex items-center gap-2 text-sm text-red-700">
+                  <div className="flex-1 h-2 rounded-full bg-red-100 overflow-hidden">
+                    <div
+                      className="h-2 bg-red-600"
+                      style={{ width: `${Math.round(uploadProgress ?? 0)}%` }}
+                    />
+                  </div>
+                  <span className="font-semibold">{Math.round(uploadProgress ?? 0)}%</span>
+                </div>
+              )}
             </div>
           </div>
 

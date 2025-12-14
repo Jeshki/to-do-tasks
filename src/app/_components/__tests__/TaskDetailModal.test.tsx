@@ -6,6 +6,8 @@ vi.mock("../../../utils/uploadthing", () => ({
   UploadButton: (props: {
     onClientUploadComplete?: (files: { url: string }[]) => void;
     onUploadError?: (err: Error) => void;
+    onUploadBegin?: () => void;
+    onUploadProgress?: (percent: number) => void;
   }) => (
     <div>
       <button
