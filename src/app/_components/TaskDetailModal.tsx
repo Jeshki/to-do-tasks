@@ -345,7 +345,7 @@ export function TaskDetailModal({
           defect: currentTask.title,
           link: `Foto ${idx + 1}`,
           frame: "",
-          note: "Pastabos raÅ¡omos ranka Excelyje",
+          note: "Pastabos rašomos ranka Excelyje",
         });
         const linkCell = row.getCell("link");
         linkCell.value = { text: `Foto ${idx + 1}`, hyperlink: photo.url };
@@ -366,14 +366,14 @@ export function TaskDetailModal({
       photosSheet.addRow({
         idx: "",
         defect: "",
-        link: 'Nuotrauka Ä¯dÄta Ä¯ rÄmelÄ¯ standartiniu dydÅ¾iu 2"x2.67"',
+        link: 'Nuotrauka įdėta į rėmelį standartiniu dydžiu 2"x2.67"',
         frame: "",
-        note: "Pastabos raÅ¡omos ranka Excelyje",
+        note: "Pastabos rašomos ranka Excelyje",
       });
       photosSheet.addRow({
         idx: "",
         defect: "",
-        link: "Nuotraukos automatiÅ¡kai suspaustos eksportuojant (~70% kokybÄ, apie 192x256 px).",
+        link: "Nuotraukos automatiškai suspaustos eksportuojant (~70% kokybė, apie 192x256 px).",
         frame: "",
         note: "",
       });
@@ -660,14 +660,12 @@ export function TaskDetailModal({
                 onKeyDown={(e) => e.key === "Enter" && handleCommentSubmit()}
                 placeholder="Parašykite komentarą..."
                 className="flex-grow p-2 border rounded-lg"
-                disabled={addComment.isPending}
-              />
-              <button
-                onClick={handleCommentSubmit}
+                disabled={addComment.isPending}/>
+              <button onClick={handleCommentSubmit}
                 disabled={!newComment.trim() || addComment.isPending}
                 className="bg-blue-500 text-white px-4 py-2 rounded-lg disabled:bg-gray-400"
               >
-                SiÅ³sti
+                Siųsti
               </button>
             </div>
           </div>
