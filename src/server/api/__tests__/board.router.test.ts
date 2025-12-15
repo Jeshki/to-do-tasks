@@ -155,6 +155,7 @@ describe("boardRouter", () => {
       categoryId: "oldCat",
       order: 1,
     });
+    mockDb.category.findFirst.mockResolvedValueOnce({ id: "newCat", userId: "user1" });
 
     mockDb.task.updateMany.mockResolvedValue({});
     mockDb.task.update.mockResolvedValueOnce({});
@@ -186,6 +187,7 @@ describe("boardRouter", () => {
       categoryId: "cat1",
       order: 5,
     });
+    mockDb.category.findFirst.mockResolvedValueOnce({ id: "cat1", userId: "user1" });
     mockDb.task.updateMany.mockResolvedValue({});
     mockDb.task.update.mockResolvedValueOnce({});
 
