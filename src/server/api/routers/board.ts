@@ -215,6 +215,16 @@ export const boardRouter = createTRPCRouter({
       });
       if (!task) throw new Error("U┼Šduotis nerasta");
 
+      // Patikriname, ar tikslin─ģ kategorija priklauso tam pa─Źiam vartotojui, kad neu┼Šgautume kit┼│ duomen┼│.
+      const targetCategory = await ctx.db.category.findFirst({
+        where: { id: input.newCategoryId, userId: ctx.session.user.id },
+        select: { id: true },
+      });
+
+      if (!targetCategory) {
+        throw new Error("Kategorija nerasta");
+      }
+
       const oldCategoryId = task.categoryId;
       const oldOrder = task.order;
 
