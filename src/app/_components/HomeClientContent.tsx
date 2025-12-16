@@ -2,11 +2,11 @@
 "use client";
 
 import { useEffect } from "react";
-// Pa?alinta problemin? eilut?: import { type FormAction } from "next/dist/server/app-render/entry-point";
+// Pašalinta probleminė eilutė: import { type FormAction } from "next/dist/server/app-render/entry-point";
 import { signOut } from "next-auth/react";
 import { TaskBoard } from "~/app/_components/post";
 
-// Supaprastinta sesijos tipo definicija
+// Supaprastinta sesijos tipo apibrėžtis
 type SessionUser = {
     name?: string | null;
     email?: string | null;
@@ -15,15 +15,21 @@ type Session = {
     user: SessionUser;
 };
 
-// Pataisymas: naudojame nauj? ServerAction tip?
-export function HomeClientContent({ session }: { session: Session }) {
-    // Kodo blokas sugadintiems slapukams i?valyti po AccessDenied klaidos.
+// Pataisymas: naudojame naują ServerAction tipą?
+export function HomeClientContent({
+    session,
+    signoutAction,
+}: {
+    session: Session;
+    signoutAction?: () => void | Promise<void>;
+}) {
+    // Kodo blokas sugadintiems slapukams išvalyti po AccessDenied klaidos.
     useEffect(() => {
         if (typeof window === "undefined") return;
 
         const params = new URLSearchParams(window.location.search);
         if (params.get("error") === "AccessDenied") {
-            // Vengiame galimos kilpos: veikiame tik kart? per seans?.
+            // Vengiame galimos kilpos: veikiame tik kartą per seansą.
             const alreadyHandled = sessionStorage.getItem("accessDeniedHandled");
             if (!alreadyHandled) {
                 sessionStorage.setItem("accessDeniedHandled", "true");
@@ -41,7 +47,10 @@ export function HomeClientContent({ session }: { session: Session }) {
                         <span className="text-sm text-muted-foreground">
                             Sveikas, {session.user.name ?? session.user.email}!
                         </span>
-                        <button className="text-sm underline" onClick={() => signOut()}>
+                        <button
+                            className="text-sm underline"
+                            onClick={() => (signoutAction ?? signOut)()}
+                        >
                             Atsijungti
                         </button>
                     </div>

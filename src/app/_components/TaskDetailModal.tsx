@@ -6,7 +6,6 @@ import {
   X,
   ImageIcon,
   MessageSquare,
-  CheckCircle,
   Save,
   ChevronLeft,
   ChevronRight,
@@ -15,6 +14,7 @@ import {
   RefreshCcw,
 } from "lucide-react";
 import type { Task } from "./post";
+export type { Task } from "./post";
 import { UploadButton } from "../../utils/uploadthing";
 import { api } from "~/uploadthing/react";
 import NextImage from "next/image";
@@ -77,7 +77,7 @@ function PhotoGalleryModal({
         <button
           onClick={goToPrev}
           className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/30 text-white p-3 rounded-full hover:bg-white/50 transition"
-          title="AnkstesnÄ"
+          title="Ankstesnė"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -281,14 +281,6 @@ export function TaskDetailModal({
     }
   };
 
-  const mapContentTypeToExt = (contentType?: string): "png" | "jpeg" | "gif" => {
-    if (!contentType) return "jpeg";
-    if (contentType.includes("png")) return "png";
-    if (contentType.includes("gif")) return "gif";
-    // ExcelJS nepalaiko webp, konvertuojame i png
-    return "jpeg";
-  };
-
   const fetchImageBase64 = async (url: string) => {
     try {
       const res = await fetch("/api/image-proxy", {
@@ -403,7 +395,7 @@ export function TaskDetailModal({
         });
       });
 
-      // Komentarai tiesiogiai po nuotraukomis tame paÄiame lape
+      // Komentarai tiesiogiai po nuotraukomis tame pačiame lape
       const commentsStart = (photosSheet.lastRow?.number ?? 1) + 2;
       const commentsHeader = photosSheet.getCell(`A${commentsStart}`);
       commentsHeader.value = "Komentarai";
@@ -506,7 +498,7 @@ export function TaskDetailModal({
                   <button
                     onClick={handleExportTaskToExcel}
                     className="text-blue-600 hover:text-blue-800 p-1 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Eksportuoti Ä¯ Excel"
+                    title="Eksportuoti į Excel"
                     disabled={isExporting}
                   >
                     <Download className="h-6 w-6" />
@@ -703,8 +695,10 @@ export function TaskDetailModal({
                 onKeyDown={(e) => e.key === "Enter" && handleCommentSubmit()}
                 placeholder="Parašykite komentarą..."
                 className="flex-grow p-2 border rounded-lg"
-                disabled={addComment.isPending}/>
-              <button onClick={handleCommentSubmit}
+                disabled={addComment.isPending}
+              />
+              <button
+                onClick={handleCommentSubmit}
                 disabled={!newComment.trim() || addComment.isPending}
                 className="bg-blue-500 text-white px-4 py-2 rounded-lg disabled:bg-gray-400"
               >
