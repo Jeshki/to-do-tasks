@@ -1,8 +1,8 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 export const boardRouter = createTRPCRouter({
-  // 1. Gauti vis─ģ lent─ģ
+  // 1. Gauti visą lentą
   getBoard: protectedProcedure.query(async ({ ctx }) => {
     return await ctx.db.category.findMany({
       where: { userId: ctx.session.user.id },
@@ -19,7 +19,7 @@ export const boardRouter = createTRPCRouter({
     });
   }),
 
-  // 2. Sukurti kategorij─ģ
+  // 2. Sukurti kategoriją
   createCategory: protectedProcedure
     .input(z.object({ title: z.string().min(1, "Pavadinimas privalomas") }))
     .mutation(async ({ ctx, input }) => {
@@ -35,12 +35,12 @@ export const boardRouter = createTRPCRouter({
           title: input.title,
           userId: ctx.session.user.id,
           order: newOrder,
-          color: "#94a3b8", // default spalva, gali keisti v─Śliau
+          color: "#94a3b8", // default spalva, gali keisti vėliau
         },
       });
     }),
 
-  // PATAISYMAS: I┼Ītrinti kategorij─ģ su visomis u┼Šduotimis
+  // PATAISYMAS: Ištrinti kategoriją su visomis užduotimis
   deleteCategory: protectedProcedure
     .input(z.object({ categoryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -50,10 +50,10 @@ export const boardRouter = createTRPCRouter({
       if (!category) throw new Error("Kategorija nerasta");
 
       await ctx.db.$transaction(async (tx) => {
-        // I┼Ītrina visas u┼Šduotis (ir susijusias nuotraukas bei komentarus d─Śl CASCADE)
+        // Ištrina visas užduotis (ir susijusias nuotraukas bei komentarus dėl CASCADE)
         await tx.category.delete({ where: { id: category.id } });
 
-        // Sutvarko likusi┼│ kategorij┼│ order (eil─Śs numerius)
+        // Sutvarko likusių kategorijų order (eilės numerius)
         await tx.category.updateMany({
           where: { userId: ctx.session.user.id, order: { gt: category.order } },
           data: { order: { decrement: 1 } },
@@ -64,7 +64,7 @@ export const boardRouter = createTRPCRouter({
     }),
 
 
-  // 3. Sukurti u┼Šduot─»
+  // 3. Sukurti užduotį
   createTask: protectedProcedure
     .input(z.object({
       title: z.string().min(1),
@@ -93,14 +93,14 @@ export const boardRouter = createTRPCRouter({
       });
     }),
 
-  // 4. I┼Ītrinti u┼Šduot─» + sutvarkyti order
+  // 4. Ištrinti užduotį + sutvarkyti order
   deleteTask: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const task = await ctx.db.task.findFirst({
         where: { id: input.id, category: { userId: ctx.session.user.id } },
       });
-      if (!task) throw new Error("U┼Šduotis nerasta");
+      if (!task) throw new Error("Užduotis nerasta");
 
       await ctx.db.$transaction(async (tx) => {
         await tx.task.delete({ where: { id: task.id } });
@@ -114,7 +114,7 @@ export const boardRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  // PATAISYMAS: Atnaujinti u┼Šduoties pavadinim─ģ ir apra┼Īym─ģ
+  // PATAISYMAS: Atnaujinti užduoties pavadinimą ir aprašymą
   updateTaskDetails: protectedProcedure
     .input(z.object({
       taskId: z.string(),
@@ -123,7 +123,7 @@ export const boardRouter = createTRPCRouter({
       createdAt: z.string().datetime().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      // Patikrinimas, ar u┼Šduotis priklauso vartotojui
+      // Patikrinimas, ar užduotis priklauso vartotojui
       await ctx.db.task.findFirstOrThrow({
         where: { id: input.taskId, category: { userId: ctx.session.user.id } },
         select: { id: true },
@@ -139,14 +139,14 @@ export const boardRouter = createTRPCRouter({
       });
     }),
 
-  // PATAISYMAS: Perjungti u┼Šduoties atlikimo b┼½sen─ģ
+  // PATAISYMAS: Perjungti užduoties atlikimo būseną
   toggleTaskCompletion: protectedProcedure
     .input(z.object({
       taskId: z.string(),
       completed: z.boolean(),
     }))
     .mutation(async ({ ctx, input }) => {
-      // Patikrinimas, ar u┼Šduotis priklauso vartotojui
+      // Patikrinimas, ar užduotis priklauso vartotojui
       await ctx.db.task.findFirstOrThrow({
         where: { id: input.taskId, category: { userId: ctx.session.user.id } },
         select: { id: true },
@@ -158,14 +158,14 @@ export const boardRouter = createTRPCRouter({
       });
     }),
 
-  // PATAISYMAS: Prid─Śti komentar─ģ
+  // PATAISYMAS: Pridėti komentarą
   addCommentToTask: protectedProcedure
     .input(z.object({
       taskId: z.string(),
-      text: z.string().min(1, "Komentaras negali b┼½ti tu┼Ī─Źias"),
+      text: z.string().min(1, "Komentaras negali būti tuščias"),
     }))
     .mutation(async ({ ctx, input }) => {
-      // Patikrinimas, ar u┼Šduotis priklauso vartotojui
+      // Patikrinimas, ar užduotis priklauso vartotojui
       await ctx.db.task.findFirstOrThrow({
         where: { id: input.taskId, category: { userId: ctx.session.user.id } },
         select: { id: true },
@@ -179,14 +179,14 @@ export const boardRouter = createTRPCRouter({
       });
     }),
 
-  // PATAISYMAS: I┼Ītrinti nuotrauk─ģ
+  // PATAISYMAS: Ištrinti nuotrauką
   deletePhotoFromTask: protectedProcedure
     .input(z.object({ photoId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const photo = await ctx.db.photo.findFirst({
         where: { 
           id: input.photoId, 
-          task: { category: { userId: ctx.session.user.id } } // Patikriname savinink─ģ per u┼Šduot─»
+          task: { category: { userId: ctx.session.user.id } } // Patikriname savininką per užduotį
         },
       });
       
@@ -199,7 +199,7 @@ export const boardRouter = createTRPCRouter({
       });
     }),
 
-  // 5. PAGRINDINIS: Perkelti u┼Šduot─» (tarp kategorij┼│ arba toje pa─Źioje)
+  // 5. PAGRINDINIS: Perkelti užduotį (tarp kategorijų arba toje pačioje)
   updateTaskPosition: protectedProcedure
     .input(
       z.object({
@@ -213,9 +213,9 @@ export const boardRouter = createTRPCRouter({
         where: { id: input.taskId, category: { userId: ctx.session.user.id } },
         select: { categoryId: true, order: true },
       });
-      if (!task) throw new Error("U┼Šduotis nerasta");
+      if (!task) throw new Error("Užduotis nerasta");
 
-      // Patikriname, ar tikslin─ģ kategorija priklauso tam pa─Źiam vartotojui, kad neu┼Šgautume kit┼│ duomen┼│.
+      // Patikriname, ar tikslinė kategorija priklauso tam pačiam vartotojui, kad neužgautume kitų duomenų.
       const targetCategory = await ctx.db.category.findFirst({
         where: { id: input.newCategoryId, userId: ctx.session.user.id },
         select: { id: true },
@@ -230,7 +230,7 @@ export const boardRouter = createTRPCRouter({
 
       await ctx.db.$transaction(async (tx) => {
         if (oldCategoryId !== input.newCategoryId) {
-          // 1. I┼Īvalome sen─ģ viet─ģ
+          // 1. Išvalome seną vietą
           await tx.task.updateMany({
             where: { categoryId: oldCategoryId, order: { gt: oldOrder } },
             data: { order: { decrement: 1 } },
@@ -245,7 +245,7 @@ export const boardRouter = createTRPCRouter({
             data: { order: { increment: 1 } },
           });
 
-          // 3. Perkeliame u┼Šduot─»
+          // 3. Perkeliame užduotį
           await tx.task.update({
             where: { id: input.taskId },
             data: {
@@ -254,7 +254,7 @@ export const boardRouter = createTRPCRouter({
             },
           });
         } else {
-          // Toje pa─Źioje kategorijoje
+          // Toje pačioje kategorijoje
           if (oldOrder < input.newOrder) {
             await tx.task.updateMany({
               where: {
@@ -299,6 +299,18 @@ export const boardRouter = createTRPCRouter({
       });
 
       if (!task) {
+        if (process.env.NODE_ENV !== "production") {
+          const anyTask = await ctx.db.task.findUnique({
+            where: { id: input.taskId },
+            select: { id: true, category: { select: { userId: true } } },
+          });
+          console.warn("[board.addPhotoToTask] Task not accessible", {
+            taskId: input.taskId,
+            sessionUserId: ctx.session.user.id,
+            exists: Boolean(anyTask),
+            ownerUserId: anyTask?.category?.userId ?? null,
+          });
+        }
         throw new Error("Task not found or you do not have permission.");
       }
 

@@ -1,6 +1,5 @@
-﻿// src/app/_components/TaskDetailModal.tsx
+// src/app/_components/TaskDetailModal.tsx
 "use client";
-import ExcelJS from "exceljs";
 
 import {
   X,
@@ -15,7 +14,7 @@ import {
 } from "lucide-react";
 import type { Task } from "./post";
 export type { Task } from "./post";
-import { UploadButton } from "../../utils/uploadthing";
+import { useRef } from "react";
 import { api } from "~/uploadthing/react";
 import NextImage from "next/image";
 import { useEffect, useState } from "react";
@@ -117,6 +116,7 @@ export function TaskDetailModal({
   const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Sync local state when a different task is opened.
   useEffect(() => {
@@ -318,14 +318,15 @@ export function TaskDetailModal({
     return results;
   };
 
-  // Eksportas: Ä¯terpia duomenis ir nuotraukas Ä¯ .xlsx (exceljs, klientas)
+  // Eksportas: Įterpia duomenis ir nuotraukas į .xlsx (exceljs, klientas)
   const handleExportTaskToExcel = async () => {
     setIsExporting(true);
     setExportStatus("Ruošiamas eksportas...");
     try {
+      const { default: ExcelJS } = await import("exceljs");
       const workbook = new ExcelJS.Workbook();
       workbook.creator = "Task board";
-      const safeTitle = currentTask.title.slice(0, 40).replace(/[\\/\\?*:]/g, "_") || "uzduotis";
+      const safeTitle = currentTask.title.slice(0, 40).replace(/[\\/\\?*:]/g, "_") || "užduotis";
 
       // Lapai
       const infoSheet = workbook.addWorksheet("Informacija");
@@ -426,7 +427,7 @@ export function TaskDetailModal({
         });
       });
 
-      // Generuojame ir siunciame faila
+      // Generuojame ir siunčiame failą
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -438,7 +439,7 @@ export function TaskDetailModal({
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 10_000);
       if (failedPhotos > 0) {
-        setExportStatus(`Pabaigta su perspejimu: ${failedPhotos} paveikslai neiterpti (CORS/fetch).`);
+        setExportStatus(`Pabaigta su perspėjimu: ${failedPhotos} paveikslai neįterpti (CORS/fetch).`);
       } else {
         setExportStatus("Eksportas baigtas.");
       }
@@ -495,9 +496,10 @@ export function TaskDetailModal({
                 </>
               ) : (
                 <div className="flex gap-2">
-                  <button
-                    onClick={handleExportTaskToExcel}
-                    className="text-blue-600 hover:text-blue-800 p-1 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    <button
+                      onClick={handleExportTaskToExcel}
+                      data-testid="task-export"
+                    className="text-green-600 hover:text-green-800 p-1 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Eksportuoti į Excel"
                     disabled={isExporting}
                   >
@@ -515,7 +517,7 @@ export function TaskDetailModal({
 
               <button
                 onClick={handleRefresh}
-                className="text-blue-500 hover:text-blue-700 p-1 rounded transition"
+                className="text-green-500 hover:text-green-700 p-1 rounded transition"
                 title="Atnaujinti modalą"
                 disabled={isExporting}
               >
@@ -616,47 +618,70 @@ export function TaskDetailModal({
             </div>
 
             <div className="mt-4">
-              <UploadButton
-                endpoint="imageUploader"
-                content={{
-                  button({ ready, isUploading, uploadProgress: btnProgress }) {
-                    if (!ready) return "Ruošiamasi...";
-                    if (isUploading) return `Įkeliama ${Math.round(btnProgress ?? uploadProgress ?? 0)}%`;
-                    return "Pasirinkti nuotraukas";
-                  },
-                  allowedContent({ isUploading, uploadProgress: btnProgress }) {
-                    if (isUploading) {
-                      return `Progresas: ${Math.round(btnProgress ?? uploadProgress ?? 0)}%`;
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                data-testid="task-photo-input"
+                className="hidden"
+                onChange={async (event) => {
+                  const files = Array.from(event.target.files ?? []);
+                  if (files.length === 0) return;
+                  handleUploadBegin();
+                  try {
+                    for (const file of files) {
+                      const formData = new FormData();
+                      formData.append("file", file);
+                      const response = await fetch("/api/blob/upload", {
+                        method: "POST",
+                        body: formData,
+                      });
+                      if (!response.ok) {
+                        const message = await response.text();
+                        throw new Error(message || "Upload failed");
+                      }
+                      const blob = (await response.json()) as { url: string };
+                      addPhotoToTask.mutate({
+                        taskId: currentTask.id,
+                        url: blob.url,
+                      });
                     }
-                    return "Leidžiama: iki 1GB vienam failui, iki 900 nuotraukų, jpg/png/gif";
-                  },
-                }}
-                appearance={{
-                  button: ({ isUploading }) =>
-                    `px-3 py-1 text-sm rounded-lg transition h-10 text-white ${
-                      isUploading ? "bg-red-600 hover:bg-red-700" : "bg-blue-500 hover:bg-blue-600"
-                    }`,
-                  container: "w-full flex justify-start items-center gap-2",
-                  allowedContent: ({ isUploading }) =>
-                    `text-xs ml-3 ${isUploading ? "text-red-700 font-semibold" : "text-muted-foreground"}`,
-                }}
-                onUploadBegin={handleUploadBegin}
-                onUploadProgress={handleUploadProgress}
-                onClientUploadComplete={(res) => {
-                  setUploadProgress(100);
-                  res?.forEach((file) => {
-                    addPhotoToTask.mutate({
-                      taskId: currentTask.id,
-                      url: file.url,
-                    });
-                  });
+                    setUploadProgress(100);
+                  } catch (error: any) {
+                    resetUploadState();
+                    alert(`KLAIDA! ${error?.message ?? "Nepavyko įkelti failo."}`);
+                    return;
+                  }
                   resetUploadState();
-                }}
-                onUploadError={(error: Error) => {
-                  resetUploadState();
-                  alert(`KLAIDA! ${error.message}`);
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                  }
                 }}
               />
+              <div className="flex justify-start items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingPhotos}
+                  className={`px-3 py-1 text-sm rounded-lg transition h-10 text-white ${
+                    isUploadingPhotos ? "bg-red-600 hover:bg-red-700" : "bg-green-500 hover:bg-green-600"
+                  }`}
+                >
+                  {isUploadingPhotos
+                    ? `Įkeliama ${Math.round(uploadProgress ?? 0)}%`
+                    : "Pasirinkti nuotraukas"}
+                </button>
+                <span
+                  className={`text-xs ml-3 ${
+                    isUploadingPhotos ? "text-red-700 font-semibold" : "text-muted-foreground"
+                  }`}
+                >
+                  {isUploadingPhotos
+                    ? `Progresas: ${Math.round(uploadProgress ?? 0)}%`
+                    : "Leidžiama: iki 1GB vienam failui, iki 900 nuotraukų, jpg/png/gif"}
+                </span>
+              </div>
               {isUploadingPhotos && (
                 <div className="mt-2 flex items-center gap-2 text-sm text-red-700">
                   <div className="flex-1 h-2 rounded-full bg-red-100 overflow-hidden">
@@ -700,7 +725,7 @@ export function TaskDetailModal({
               <button
                 onClick={handleCommentSubmit}
                 disabled={!newComment.trim() || addComment.isPending}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg disabled:bg-gray-400"
+                className="bg-green-500 text-white px-4 py-2 rounded-lg disabled:bg-gray-400"
               >
                 Siųsti
               </button>

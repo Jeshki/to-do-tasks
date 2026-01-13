@@ -6,7 +6,7 @@ import { render, screen } from "@testing-library/react";
 import { HomeClientContent } from "../HomeClientContent";
 
 describe("HomeClientContent", () => {
-  it("parodo vartotojo vardą ar el. paštą", () => {
+  it("rodo vartotojo vardą", () => {
     render(
       <HomeClientContent
         session={{ user: { name: "Jonas", email: "jonas@example.com" } }}
@@ -15,5 +15,25 @@ describe("HomeClientContent", () => {
     );
 
     expect(screen.getByText(/Jonas/)).toBeInTheDocument();
+  });
+
+  it("rodo administravimo mygtuką tik adminui", () => {
+    const { rerender } = render(
+      <HomeClientContent
+        session={{ user: { name: "Admin", email: "admin@example.com", role: "ADMIN" } }}
+        signoutAction={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("admin-link")).toBeInTheDocument();
+
+    rerender(
+      <HomeClientContent
+        session={{ user: { name: "User", email: "user@example.com", role: "EMPLOYEE" } }}
+        signoutAction={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByTestId("admin-link")).toBeNull();
   });
 });

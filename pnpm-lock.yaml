@@ -50,6 +50,9 @@ importers:
       '@uploadthing/react':
         specifier: ^6.0.0
         version: 6.8.0(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)(uploadthing@6.13.3(next@14.2.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(tailwindcss@3.4.18))
+      bcryptjs:
+        specifier: ^2.4.3
+        version: 2.4.3
       exceljs:
         specifier: ^4.4.0
         version: 4.4.0
@@ -1256,6 +1259,9 @@ packages:
   baseline-browser-mapping@2.9.7:
     resolution: {integrity: sha512-k9xFKplee6KIio3IDbwj+uaCLpqzOwakOgmqzPezM0sFJlFKcg30vk2wOiAJtkTSfx0SSQDSe8q+mWA/fSH5Zg==}
     hasBin: true
+
+  bcryptjs@2.4.3:
+    resolution: {integrity: sha512-V/Hy/X9Vt7f3BbPJEi8BdVFMByHi+jNXrYkW3huaybV/kQ0KJg0Y6PkEMbn+zeT+i+SiKZ/HMqJGIIt4LZDqNQ==}
 
   bidi-js@1.0.3:
     resolution: {integrity: sha512-RKshQI1R3YQ+n9YJz2QQ147P66ELpa1FQEg20Dk8oW9t2KgLbpDLLp9aGZ7y8WHSshDknG0bknqGw5/tyCs5tw==}
@@ -4281,6 +4287,8 @@ snapshots:
   base64-js@1.5.1: {}
 
   baseline-browser-mapping@2.9.7: {}
+
+  bcryptjs@2.4.3: {}
 
   bidi-js@1.0.3:
     dependencies:

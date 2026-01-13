@@ -1,4 +1,4 @@
-﻿/**
+/**
  * YOU PROBABLY DON'T NEED TO EDIT THIS FILE, UNLESS:
  * 1. You want to modify request context (see Part 1).
  * 2. You want to create a new middleware or type of procedure (see Part 3).
@@ -12,6 +12,8 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { auth } from "~/server/auth";
+import { env } from "~/env";
+import { getToken } from "next-auth/jwt";
 import { db } from "~/server/db";
 
 /**
@@ -26,8 +28,88 @@ import { db } from "~/server/db";
  *
  * @see https://trpc.io/docs/server/context
  */
-export const createTRPCContext = async (opts: { headers: Headers }) => {
-	const session = await auth();
+type CreateContextOptions = {
+	headers: Headers;
+	req?: Request;
+};
+
+export const createTRPCContext = async (opts: CreateContextOptions) => {
+	const readCookie = (header: string | null, name: string) => {
+		if (!header) return null;
+		for (const part of header.split(";")) {
+			const [key, ...rest] = part.trim().split("=");
+			if (key === name) {
+				return decodeURIComponent(rest.join("="));
+			}
+		}
+		return null;
+	};
+
+	const cookieHeader = opts.headers.get("cookie");
+	const e2eEmailHeader = opts.headers.get("x-e2e-user-email");
+	const e2eEmailCookie = readCookie(cookieHeader, "e2e_user_email");
+	const e2eEmail =
+		(e2eEmailHeader ?? e2eEmailCookie)?.trim().toLowerCase() ?? null;
+
+	if (process.env.NODE_ENV !== "production" && e2eEmail) {
+		const user = await db.user.findUnique({
+			where: { email: e2eEmail },
+			select: { id: true, email: true, name: true, role: true },
+		});
+		if (user) {
+			return {
+				db,
+				session: {
+					user: {
+						id: user.id,
+						email: user.email ?? undefined,
+						name: user.name ?? undefined,
+						role: user.role,
+					},
+					expires: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+				},
+				...opts,
+			};
+		}
+	}
+
+	let session = await auth();
+	if (!session && opts.req) {
+		session = await auth(opts.req);
+	}
+	if (!session && opts.req) {
+		const token = await getToken({ req: opts.req, secret: env.NEXTAUTH_SECRET });
+		if (token) {
+			session = {
+				user: {
+					id: (token as any).id ?? token.sub ?? "",
+					email: token.email ?? undefined,
+					name: token.name ?? undefined,
+					role: (token as any).role ?? "EMPLOYEE",
+				},
+				expires: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+			};
+		}
+	}
+	if (!session && process.env.NODE_ENV !== "production") {
+		if (e2eEmail) {
+			const user = await db.user.findUnique({
+				where: { email: e2eEmail },
+				select: { id: true, email: true, name: true, role: true },
+			});
+			if (user) {
+				session = {
+					user: {
+						id: user.id,
+						email: user.email ?? undefined,
+						name: user.name ?? undefined,
+						role: user.role,
+					},
+					expires: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+				};
+			}
+		}
+	}
 
 	return {
 		db,
@@ -105,4 +187,11 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
 			session: { ...ctx.session, user: ctx.session.user },
 		},
 	});
+});
+
+export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+	if (ctx.session.user.role !== "ADMIN") {
+		throw new TRPCError({ code: "FORBIDDEN" });
+	}
+	return next();
 });

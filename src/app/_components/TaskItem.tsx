@@ -23,6 +23,8 @@ export function TaskItem({ task, onTaskSelectAction }: { task: Task; onTaskSelec
       ref={setNodeRef}
       style={style}
       onClick={() => onTaskSelectAction(task)}
+      data-testid="task-item"
+      data-task-id={task.id}
       className={`bg-white p-4 rounded-lg shadow cursor-pointer relative group hover:shadow-md transition ${task.completed ? 'opacity-50 line-through' : ''}`}
     >
       <div className="flex items-center gap-2">

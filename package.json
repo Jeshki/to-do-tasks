@@ -8,12 +8,16 @@
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "test:watch": "vitest watch",
+    "test:cypress": "cypress run",
+    "test:cypress:open": "cypress open",
     "postinstall": "prisma generate",
+    "create-user": "node scripts/create-user.cjs",
     "vercel-build": "pnpm prisma generate && pnpm next build"
   },
   "dependencies": {
-    "@auth/core": "^0.34.3",
+    "@auth/core": "^0.41.1",
     "@auth/prisma-adapter": "^2.11.1",
     "@dnd-kit/core": "^6.1.0",
     "@dnd-kit/sortable": "^8.0.0",
@@ -21,14 +25,15 @@
     "@prisma/client": "5.22.0",
     "@t3-oss/env-nextjs": "^0.7.0",
     "@tanstack/react-query": "^5.0.0",
-    "@trpc/client": "11.7.1",
-    "@trpc/next": "11.7.1",
-    "@trpc/react-query": "11.7.1",
-    "@trpc/server": "11.7.1",
+    "@trpc/client": "^11.8.1",
+    "@trpc/next": "^11.8.1",
+    "@trpc/react-query": "^11.8.1",
     "@uploadthing/react": "^6.0.0",
+    "@vercel/blob": "^0.27.0",
+    "bcryptjs": "^2.4.3",
     "exceljs": "^4.4.0",
     "lucide-react": "^0.263.1",
-    "next": "14.2.5",
+    "next": "^14.2.35",
     "next-auth": "^5.0.0-beta.19",
     "react": "18.2.0",
     "react-dom": "18.2.0",
@@ -38,20 +43,25 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.0",
+    "@testing-library/react": "^16.3.1",
+    "@trpc/server": "^11.8.1",
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "autoprefixer": "^10.4.22",
     "baseline-browser-mapping": "^2.9.7",
+    "cypress": "^15.8.1",
     "eslint": "^8.57.1",
-    "eslint-config-next": "14.2.5",
+    "eslint-config-next": "^16.1.1",
     "jsdom": "^27.2.0",
-    "msw": "^2.12.3",
+    "msw": "^2.12.7",
     "postcss": "^8.5.6",
     "prisma": "5.22.0",
     "rimraf": "^6.1.2",
+    "supertest": "^7.2.2",
     "tailwindcss": "^3.4.4",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "5.7.2",
@@ -60,6 +70,14 @@
   "pnpm": {
     "overrides": {
       "next": "14.2.5"
-    }
+    },
+    "ignoredBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "msw",
+      "prisma",
+      "unrs-resolver"
+    ]
   }
 }

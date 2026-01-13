@@ -1,10 +1,10 @@
-﻿"use client";
+"use client";
 
 import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchStreamLink } from "@trpc/client";
+import { httpBatchLink, httpBatchStreamLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SuperJSON from "superjson";
 
 import type { AppRouter } from "~/server/api/root";
@@ -44,20 +44,34 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
 	const [trpcClient] = useState(() =>
 		api.createClient({
 			links: [
-				// Vengiame loggerio, kad nekelt┼│ konsol─Śs triuk┼Īmo dev re┼Šime
 				// Vengiame loggerio, kad nekeltų konsolės triukšmo dev režime
-				httpBatchStreamLink({
+				(process.env.NODE_ENV === "production"
+					? httpBatchStreamLink
+					: httpBatchLink)({
 					transformer: SuperJSON,
 					url: `${getBaseUrl()}/api/trpc`,
+					fetch: (input, init) =>
+						fetch(input, { ...init, credentials: "include" }),
 					headers: () => {
 						const headers = new Headers();
 						headers.set("x-trpc-source", "nextjs-react");
+						const e2eUser = (globalThis as any).__e2eUser;
+						if (e2eUser?.email) {
+							headers.set("x-e2e-user-email", String(e2eUser.email));
+						}
+						if (e2eUser?.role) {
+							headers.set("x-e2e-user-role", String(e2eUser.role));
+						}
 						return headers;
 					},
 				}),
 			],
 		}),
 	);
+
+	useEffect(() => {
+		(globalThis as any).__e2eHydrated = true;
+	}, []);
 
 	return (
 		<QueryClientProvider client={queryClient}>
@@ -68,26 +82,19 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
 	);
 }
 
-// PATAISYMAS: ┼Āi funkcija buvo klaidinga. NextAuth.js jau nurodo NEXTAUTH_URL,
-// o Next.js automati┼Īkai nustato VERCEL_URL ir PORT aplinkos kintamuosius.
-// Norint prieiti prie j┼│ kliente, jie turi b┼½ti pa┼Šym─Śti kaip NEXT_PUBLIC_
 // PATAISYMAS: Ši funkcija buvo klaidinga. NextAuth.js jau nurodo NEXTAUTH_URL,
 // o Next.js automatiškai nustato VERCEL_URL ir PORT aplinkos kintamuosius.
 // Norint prieiti prie jų kliente, jie turi būti pažymėti kaip NEXT_PUBLIC_
 // arba tiesiog geriau naudoti window.location.origin
 function getBaseUrl() {
 	if (typeof window !== "undefined") return window.location.origin;
-    // Kad i┼Īvengtume kintam┼│j┼│ nuot─Śkio ─» klient─ģ, naudojame tiesiogin─» kintam─ģj─»
     // Kad išvengtume kintamųjų nuotėkio į klientą, naudojame tiesioginį kintamąjį
     // (bet tik tuo atveju, jei jis tikrai egzistuoja serveryje).
-    // Turbopack yra labai grie┼Štas, tod─Śl gr─ģ┼Šiname tik window.location.origin kliente.
     // Turbopack yra labai griežtas, todėl grąžiname tik window.location.origin kliente.
     
-    // Serverio pus─Śje (SSR):
     // Serverio pusėje (SSR):
     if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
 	
-    // Jei Vercel aplinkos kintamieji nepasiekiami, gr─ģ┼Šiname numatyt─ģj─»:
     // Jei Vercel aplinkos kintamieji nepasiekiami, grąžiname numatytąjį:
     return `http://localhost:${process.env.PORT ?? 3000}`;
 }

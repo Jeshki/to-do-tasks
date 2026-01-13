@@ -2,55 +2,6 @@ import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { TaskDetailModal, type Task } from "../TaskDetailModal";
 
-vi.mock("../../../utils/uploadthing", () => ({
-  // Simuliuojame UploadButton: sėkmės ir klaidos scenarijai.
-  UploadButton: (props: {
-    onClientUploadComplete?: (files: { url: string }[]) => void;
-    onUploadError?: (err: Error) => void;
-    onUploadBegin?: () => void;
-    onUploadProgress?: (percent: number) => void;
-  }) => (
-    <div>
-      <button
-        type="button"
-        data-testid="upload-button-mock"
-        onClick={() =>
-          props.onClientUploadComplete?.([
-            { url: "https://example.com/pic1.jpg" },
-            { url: "https://example.com/pic2.jpg" },
-          ])
-        }
-      >
-        Mock upload
-      </button>
-      <button
-        type="button"
-        data-testid="upload-button-mock-empty"
-        onClick={() => props.onClientUploadComplete?.([])}
-      >
-        Mock upload empty
-      </button>
-      <button
-        type="button"
-        data-testid="upload-button-mock-partial"
-        onClick={() => {
-          props.onClientUploadComplete?.([{ url: "https://example.com/ok.jpg" }]);
-          props.onUploadError?.(new Error("partial fail"));
-        }}
-      >
-        Mock upload partial
-      </button>
-      <button
-        type="button"
-        data-testid="upload-button-mock-error"
-        onClick={() => props.onUploadError?.(new Error("mock klaida"))}
-      >
-        Mock upload error
-      </button>
-    </div>
-  ),
-}));
-
 const addPhotoMock = vi.fn();
 const deletePhotoMock = vi.fn();
 const updateDetailsMock = vi.fn();
@@ -58,6 +9,30 @@ const toggleMock = vi.fn();
 const addCommentMock = vi.fn();
 const refetchMock = vi.fn();
 const invalidateMock = vi.fn();
+
+const createImageFile = (name: string) =>
+  new File(["file"], name, { type: "image/jpeg" });
+
+const setupFetchResponses = (
+  responses: Array<{ ok: boolean; url?: string; text?: string }>,
+) => {
+  let call = 0;
+  return vi.spyOn(globalThis, "fetch").mockImplementation(async () => {
+    const current = responses[Math.min(call, responses.length - 1)];
+    call += 1;
+    if (current.ok) {
+      return {
+        ok: true,
+        json: async () => ({ url: current.url ?? "https://example.com/file.jpg" }),
+        text: async () => "",
+      } as Response;
+    }
+    return {
+      ok: false,
+      text: async () => current.text ?? "Upload failed",
+    } as Response;
+  });
+};
 
 vi.mock("~/uploadthing/react", () => ({
   api: {
@@ -142,7 +117,7 @@ describe("TaskDetailModal", () => {
     });
   });
 
-  it("refresh mygtukas atsikviecia refetch ir atnaujina pavadinima", async () => {
+  it("refresh mygtukas atsikviečia refetch ir atnaujina pavadinimą", async () => {
     refetchMock.mockResolvedValue({
       data: [{ id: "c1", title: "cat", color: "#fff", order: 0, tasks: [{ ...baseTask, title: "Refreshed" }] }],
     });
@@ -168,7 +143,7 @@ describe("TaskDetailModal", () => {
     });
   });
 
-  it("persijungus i kita uzduoti atnaujina laukus ir uzdaro galerija", async () => {
+  it("persijungus į kitą užduotį atnaujina laukus ir uždaro galeriją", async () => {
     const { rerender } = render(<TaskDetailModal task={taskWithPhoto} onCloseAction={vi.fn()} />);
 
     fireEvent.click(screen.getByTitle("Redaguoti"));
@@ -185,7 +160,7 @@ describe("TaskDetailModal", () => {
     expect(screen.queryByText("1 / 1")).not.toBeInTheDocument();
   });
 
-  it("cancel grazina ankstesnius laukus", async () => {
+  it("cancel grąžina ankstesnius laukus", async () => {
     render(<TaskDetailModal task={baseTask} onCloseAction={vi.fn()} />);
     fireEvent.click(screen.getByTitle("Redaguoti"));
     fireEvent.change(screen.getByDisplayValue("Test task"), { target: { value: "Changed" } });
@@ -195,10 +170,10 @@ describe("TaskDetailModal", () => {
     expect(screen.getByText("Test task")).toBeInTheDocument();
   });
 
-  it("paspaudus trynimo ant nuotraukos kviecia deletePhoto", async () => {
+  it("paspaudus trynimo ant nuotraukos kviečia deletePhoto", async () => {
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
     render(<TaskDetailModal task={taskWithPhoto} onCloseAction={vi.fn()} />);
-    const deleteBtn = screen.getByTitle(/trinti nuotrauk/i);
+    const deleteBtn = screen.getByTitle(/trinti nuotrauką/i);
     fireEvent.click(deleteBtn);
     await waitFor(() => {
       expect(deletePhotoMock).toHaveBeenCalledWith({ photoId: "p1" });
@@ -208,7 +183,14 @@ describe("TaskDetailModal", () => {
 
   it("kviečia addPhotoToTask visiems sėkmingai užbaigtiems įkėlimams", async () => {
     render(<TaskDetailModal task={baseTask} onCloseAction={vi.fn()} />);
-    fireEvent.click(screen.getByTestId("upload-button-mock"));
+    const fetchSpy = setupFetchResponses([
+      { ok: true, url: "https://example.com/pic1.jpg" },
+      { ok: true, url: "https://example.com/pic2.jpg" },
+    ]);
+    const input = screen.getByTestId("task-photo-input") as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [createImageFile("pic1.jpg"), createImageFile("pic2.jpg")] },
+    });
 
     await waitFor(() => {
       expect(addPhotoMock).toHaveBeenCalledTimes(2);
@@ -221,37 +203,42 @@ describe("TaskDetailModal", () => {
       taskId: "t1",
       url: "https://example.com/pic2.jpg",
     });
+    fetchSpy.mockRestore();
   });
 
   it("rodo alert jei upload grąžina klaidą", async () => {
     const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
     render(<TaskDetailModal task={baseTask} onCloseAction={vi.fn()} />);
-
-    fireEvent.click(screen.getByTestId("upload-button-mock-error"));
+    const fetchSpy = setupFetchResponses([{ ok: false, text: "mock klaida" }]);
+    const input = screen.getByTestId("task-photo-input") as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [createImageFile("bad.jpg")] } });
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining("mock klaida"));
     });
+    fetchSpy.mockRestore();
     alertSpy.mockRestore();
   });
 
   it("nekviečia addPhotoToTask kai upload grąžina klaidą", async () => {
     const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
     render(<TaskDetailModal task={baseTask} onCloseAction={vi.fn()} />);
-
-    fireEvent.click(screen.getByTestId("upload-button-mock-error"));
+    const fetchSpy = setupFetchResponses([{ ok: false, text: "mock klaida" }]);
+    const input = screen.getByTestId("task-photo-input") as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [createImageFile("bad.jpg")] } });
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalled();
     });
     expect(addPhotoMock).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
     alertSpy.mockRestore();
   });
 
   it("nekviečia addPhotoToTask kai nėra grąžintų failų", async () => {
     render(<TaskDetailModal task={baseTask} onCloseAction={vi.fn()} />);
-
-    fireEvent.click(screen.getByTestId("upload-button-mock-empty"));
+    const input = screen.getByTestId("task-photo-input") as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [] } });
 
     // neturėtų bandyti pridėti nuotraukų, nes masyvas tuščias
     await waitFor(() => {
@@ -262,8 +249,14 @@ describe("TaskDetailModal", () => {
   it("dalinės sėkmės scenarijus: prideda sėkmingus ir rodo klaidą dėl nesėkmingo", async () => {
     const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
     render(<TaskDetailModal task={baseTask} onCloseAction={vi.fn()} />);
-
-    fireEvent.click(screen.getByTestId("upload-button-mock-partial"));
+    const fetchSpy = setupFetchResponses([
+      { ok: true, url: "https://example.com/ok.jpg" },
+      { ok: false, text: "partial fail" },
+    ]);
+    const input = screen.getByTestId("task-photo-input") as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [createImageFile("ok.jpg"), createImageFile("bad.jpg")] },
+    });
 
     await waitFor(() => {
       expect(addPhotoMock).toHaveBeenCalledTimes(1);
@@ -273,6 +266,7 @@ describe("TaskDetailModal", () => {
       url: "https://example.com/ok.jpg",
     });
     expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining("partial fail"));
+    fetchSpy.mockRestore();
     alertSpy.mockRestore();
   });
 });

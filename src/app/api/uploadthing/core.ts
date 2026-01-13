@@ -1,10 +1,10 @@
-﻿import { createUploadthing, type FileRouter } from "uploadthing/next";
+import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { auth } from "~/server/auth";
 
 const f = createUploadthing();
 
 export const ourFileRouter = {
-// Leid┼Šiame kelti dar daugiau nuotrauk┼│ vienu metu ir didelius failus.
+// Leidžiame kelti dar daugiau nuotraukų vienu metu ir didelius failus.
 imageUploader: f({ image: { maxFileSize: "1GB", maxFileCount: 900 } })
     .middleware(async ({ req }) => {
       const session = await auth();
@@ -18,4 +18,3 @@ imageUploader: f({ image: { maxFileSize: "1GB", maxFileCount: 900 } })
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;
-

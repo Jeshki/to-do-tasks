@@ -1,72 +1,125 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import { CategoryColumn } from "../CategoryColumn";
 
-// Mocks
 const createTaskMock = vi.fn();
-const deleteCategoryMock = vi.fn();
+const invalidateMock = vi.fn();
+const cancelMock = vi.fn();
+const setDataMock = vi.fn();
+const getDataMock = vi.fn();
+let createTaskOptions: any;
+let createTaskContext: any;
+let alertSpy: any;
+
+const baseCategories = [
+  {
+    id: "c1",
+    title: "Column 1",
+    color: "#fff",
+    order: 0,
+    tasks: [],
+  },
+];
+
+let cacheData = structuredClone(baseCategories);
+
+const resetData = () => {
+  cacheData = structuredClone(baseCategories);
+};
+
+setDataMock.mockImplementation((_key: unknown, updater: any) => {
+  if (typeof updater === "function") {
+    cacheData = updater(cacheData);
+  } else {
+    cacheData = updater;
+  }
+});
+
+getDataMock.mockImplementation(() => cacheData);
 
 vi.mock("@dnd-kit/core", () => ({
-  useDroppable: () => ({ setNodeRef: vi.fn() }),
+  useDroppable: () => ({ setNodeRef: () => {} }),
 }));
+
 vi.mock("@dnd-kit/sortable", () => ({
   SortableContext: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   verticalListSortingStrategy: vi.fn(),
 }));
+
 vi.mock("../TaskItem", () => ({
-  TaskItem: ({ task }: { task: any }) => <div data-testid="task-item-mock">{task.title}</div>,
+  TaskItem: ({ task }: { task: { title: string } }) => (
+    <div data-testid="task-item">{task.title}</div>
+  ),
 }));
+
 vi.mock("~/uploadthing/react", () => ({
   api: {
-    useUtils: () => ({ board: { getBoard: { invalidate: vi.fn() } } }),
+    useUtils: () => ({
+      board: {
+        getBoard: {
+          invalidate: invalidateMock,
+          cancel: cancelMock,
+          setData: setDataMock,
+          getData: getDataMock,
+        },
+      },
+    }),
     board: {
-      createTask: { useMutation: () => ({ mutate: createTaskMock, isPending: false }) },
-      deleteCategory: { useMutation: () => ({ mutate: deleteCategoryMock, isPending: false }) },
+      createTask: {
+        useMutation: (options: any) => {
+          createTaskOptions = options;
+          return {
+            mutate: async (input: any) => {
+              createTaskMock(input);
+              if (options?.onMutate) {
+                createTaskContext = await options.onMutate(input);
+              }
+            },
+          };
+        },
+      },
+      deleteCategory: { useMutation: () => ({ mutate: vi.fn() }) },
     },
   },
 }));
 
-const baseCategory = {
-  id: "cat1",
-  title: "Mano kategorija",
-  color: "#fff",
-  tasks: [],
-};
-
 describe("CategoryColumn", () => {
   beforeEach(() => {
     createTaskMock.mockReset();
-    deleteCategoryMock.mockReset();
+    invalidateMock.mockReset();
+    cancelMock.mockReset();
+    setDataMock.mockClear();
+    getDataMock.mockClear();
+    createTaskOptions = null;
+    createTaskContext = null;
+    resetData();
+    alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
   });
 
-  it("sukuria užduotį su apkarpytu pavadinimu", () => {
-    // @ts-expect-error test render without full dnd-kit typing
-    render(<CategoryColumn category={baseCategory} onTaskSelectAction={vi.fn()} />);
-
-    fireEvent.click(screen.getByText(/Pridėti užduotį/i));
-    const input = screen.getByPlaceholderText("Užduoties pavadinimas...");
-
-    fireEvent.change(input, { target: { value: "  Nauja užduotis  " } });
-    fireEvent.click(screen.getByText("Pridėti"));
-
-    expect(createTaskMock).toHaveBeenCalledWith({ title: "Nauja užduotis", categoryId: "cat1" });
+  afterEach(() => {
+    alertSpy?.mockRestore();
   });
 
-  it("neleidžia kurti tuščios užduoties (mygtukas disablinamas)", () => {
-    // @ts-expect-error test render without full dnd-kit typing
-    render(<CategoryColumn category={baseCategory} onTaskSelectAction={vi.fn()} />);
-    fireEvent.click(screen.getByText(/Pridėti užduotį/i));
-    const button = screen.getByText("Pridėti") as HTMLButtonElement;
-    expect(button.disabled).toBe(true);
-  });
+  it("rolls back optimistic task when createTask fails", async () => {
+    render(
+      <CategoryColumn category={cacheData[0]} onTaskSelectAction={() => {}} />,
+    );
+    expect(createTaskOptions).toBeTruthy();
 
-  it("trynimas kviečia mutate jei patvirtinta", () => {
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const previous = structuredClone(cacheData);
+    const input = { title: "New Task", categoryId: "c1" };
 
-    // @ts-expect-error test render without full dnd-kit typing
-    render(<CategoryColumn category={baseCategory} onTaskSelectAction={vi.fn()} />);
-    fireEvent.click(screen.getByTitle(/Ištrinti kategoriją/i));
+    await act(async () => {
+      createTaskContext = await createTaskOptions?.onMutate?.(input);
+    });
 
-    expect(deleteCategoryMock).toHaveBeenCalledWith({ categoryId: "cat1" });
-    confirmSpy.mockRestore();
+    expect(cacheData[0].tasks).toHaveLength(1);
+    expect(cacheData[0].tasks[0].title).toBe("New Task");
+
+    act(() => {
+      createTaskOptions?.onError?.(new Error("fail"), input, createTaskContext);
+    });
+
+    expect(cacheData).toEqual(previous);
+    expect(window.alert).toHaveBeenCalled();
   });
 });

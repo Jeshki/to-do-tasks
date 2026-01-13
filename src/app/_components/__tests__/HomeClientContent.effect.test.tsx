@@ -1,9 +1,13 @@
-import { render } from "@testing-library/react";
-import { HomeClientContent } from "../HomeClientContent";
+vi.mock("../post", () => ({
+  TaskBoard: () => <div data-testid="taskboard-mock" />,
+}));
 
 vi.mock("next-auth/react", () => ({
   signOut: vi.fn(),
 }));
+
+import { render } from "@testing-library/react";
+import { HomeClientContent } from "../HomeClientContent";
 
 describe("HomeClientContent AccessDenied efektas", () => {
   const originalLocation = window.location;
@@ -39,6 +43,3 @@ describe("HomeClientContent AccessDenied efektas", () => {
     expect(window.location.href).toBe(""); // neperrašyta antrą kartą
   });
 });
-vi.mock("../post", () => ({
-  TaskBoard: () => <div data-testid="taskboard-mock" />,
-}));

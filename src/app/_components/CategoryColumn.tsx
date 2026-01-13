@@ -83,13 +83,19 @@ export function CategoryColumn({
   };
 
   return (
-    <div ref={setNodeRef} className="w-80 rounded-xl bg-gray-50 p-4 flex flex-col gap-4">
+    <div
+      ref={setNodeRef}
+      data-testid="category-column"
+      data-category-id={category.id}
+      className="w-80 rounded-xl bg-gray-50 p-4 flex flex-col gap-4"
+    >
       <div className="flex justify-between items-center">
         <h2 className="font-semibold text-lg">
           {category.title} ({category.tasks.length})
         </h2>
         <button
           onClick={handleDeleteCategory}
+          data-testid="delete-category"
           className="text-gray-400 hover:text-red-500 transition"
           title="Ištrinti kategoriją"
         >
@@ -113,18 +119,24 @@ export function CategoryColumn({
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && safeCreateTask()}
             placeholder="Užduoties pavadinimas..."
+            data-testid="task-title-input"
             className="px-3 py-2 border rounded-lg"
           />
           <div className="flex gap-2">
             <button
               type="button"
               onClick={safeCreateTask}
-              className="bg-blue-500 text-white px-3 py-1 rounded disabled:bg-gray-400"
+              data-testid="task-submit"
+              className="bg-green-500 text-white px-3 py-1 rounded disabled:bg-gray-400"
               disabled={!title.trim() || createTask.isPending}
             >
               Pridėti
             </button>
-            <button onClick={() => setIsAdding(false)} className="text-gray-500">
+            <button
+              onClick={() => setIsAdding(false)}
+              data-testid="task-cancel"
+              className="text-gray-500"
+            >
               Atšaukti
             </button>
           </div>
@@ -132,6 +144,7 @@ export function CategoryColumn({
       ) : (
         <button
           onClick={() => setIsAdding(true)}
+          data-testid="add-task"
           className="text-left text-gray-500 hover:text-gray-700 flex items-center gap-2"
         >
           <Plus className="w-4 h-4" /> Pridėti užduotį
@@ -140,5 +153,3 @@ export function CategoryColumn({
     </div>
   );
 }
-
-
