@@ -11,12 +11,18 @@ let capturedOnDragEnd: ((e: any) => void) | null = null;
 let createCategoryOptions: any;
 let createCategoryContext: any;
 
+const baseDate = new Date("2025-01-01T00:00:00Z");
+const taskDate = new Date("2025-01-02T00:00:00Z");
+
 const baseCategories = [
   {
     id: "c1",
     title: "Pirmas",
     color: "#fff",
     order: 0,
+    userId: "u1",
+    createdAt: baseDate,
+    updatedAt: baseDate,
     tasks: [
       {
         id: "t1",
@@ -25,6 +31,8 @@ const baseCategories = [
         completed: false,
         categoryId: "c1",
         order: 0,
+        createdAt: taskDate,
+        updatedAt: taskDate,
         photos: [],
         comments: [],
       },
@@ -35,6 +43,9 @@ const baseCategories = [
     title: "Antras",
     color: "#fff",
     order: 1,
+    userId: "u1",
+    createdAt: baseDate,
+    updatedAt: baseDate,
     tasks: [],
   },
 ];
@@ -234,6 +245,9 @@ describe("TaskBoard", () => {
       title: "Nauja kolona",
       color: "#94a3b8",
       order: 2,
+      userId: "u1",
+      createdAt: baseDate,
+      updatedAt: baseDate,
       tasks: [],
     };
 

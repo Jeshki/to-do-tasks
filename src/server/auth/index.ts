@@ -1,6 +1,7 @@
 // src/server/auth/index.ts
 import { cookies, headers } from "next/headers";
 import NextAuth from "next-auth";
+import type { UserRole } from "@prisma/client";
 import { db } from "~/server/db";
 import { authConfig } from "./config"; // PATAISYTA: Dabar importuojama teisinga konstanta
 
@@ -13,6 +14,13 @@ const readCookieValue = (cookieHeader: string | null, name: string) => {
     if (key === name) {
       return decodeURIComponent(rest.join("="));
     }
+  }
+  return null;
+};
+
+const parseUserRole = (value: string | null | undefined): UserRole | null => {
+  if (value === "ADMIN" || value === "EMPLOYEE") {
+    return value;
   }
   return null;
 };
@@ -45,15 +53,15 @@ const getE2ESession = async (req?: Request) => {
     select: { id: true, email: true, name: true, role: true },
   });
 
-  const fallbackRole =
-    headerRole ??
-    cookieRole ??
+  const fallbackRole: UserRole =
+    parseUserRole(headerRole) ??
+    parseUserRole(cookieRole) ??
     (adminEmail && email === adminEmail
       ? "ADMIN"
       : employeeEmail && email === employeeEmail
         ? "EMPLOYEE"
         : "EMPLOYEE");
-  const role = (user?.role ?? fallbackRole) as typeof user.role;
+  const role: UserRole = user?.role ?? fallbackRole;
 
   return {
     user: {

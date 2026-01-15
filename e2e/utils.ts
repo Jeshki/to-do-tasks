@@ -1,5 +1,20 @@
 import { expect, type Page } from "@playwright/test";
 
+export async function waitForHydration(page: Page, timeoutMs = 30_000) {
+  await page.waitForFunction(() => (globalThis as any).__e2eHydrated === true, {
+    timeout: timeoutMs,
+  });
+}
+
+async function ensureHydration(page: Page, timeoutMs = 30_000) {
+  try {
+    await waitForHydration(page, timeoutMs);
+  } catch {
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await waitForHydration(page, timeoutMs);
+  }
+}
+
 export async function login(page: Page, email: string, password: string) {
   const adminEmail = process.env.E2E_ADMIN_EMAIL?.toLowerCase().trim();
   const employeeEmail = process.env.E2E_EMPLOYEE_EMAIL?.toLowerCase().trim();
@@ -46,6 +61,7 @@ export async function login(page: Page, email: string, password: string) {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("signout-button")).toBeVisible({ timeout: 60_000 });
     await expect(page.getByTestId("home-title")).toBeVisible({ timeout: 60_000 });
+    await ensureHydration(page);
     return;
   }
 
@@ -61,10 +77,7 @@ export async function login(page: Page, email: string, password: string) {
 
   await expect(page.getByTestId("signout-button")).toBeVisible({ timeout: 60_000 });
   await expect(page.getByTestId("home-title")).toBeVisible({ timeout: 60_000 });
-}
-
-export async function waitForHydration(page: Page) {
-  await page.waitForFunction(() => (globalThis as any).__e2eHydrated === true);
+  await ensureHydration(page);
 }
 
 export async function waitForTrpcResponse(page: Page, procedureName: string) {

@@ -10,48 +10,19 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { api } from "~/uploadthing/react";
+import { api, type RouterOutputs } from "~/uploadthing/react";
 import { CategoryColumn } from "./CategoryColumn";
 import { TaskDetailModal } from "./TaskDetailModal";
 
-export type Comment = {
-  id: string;
-  text: string;
-  createdAt: Date;
-  taskId: string;
-};
-
-export type Photo = {
-  id: string;
-  url: string;
-  categoryId: string | null;
-  taskId: string;
-};
-
-export type Task = {
-  id: string;
-  title: string;
-  description: string | null;
-  completed: boolean;
-  categoryId: string;
-  order: number;
-  createdAt: Date;
-  updatedAt: Date;
-  photos: Photo[];
-  comments: Comment[];
-};
-
-export type Category = {
-  id: string;
-  title: string;
-  color?: string | null;
-  order: number;
-  tasks: Task[];
-};
+type BoardCategories = RouterOutputs["board"]["getBoard"];
+export type Category = BoardCategories[number];
+export type Task = Category["tasks"][number];
+export type Comment = Task["comments"][number];
+export type Photo = Task["photos"][number];
 
 export function TaskBoard() {
   const utils = api.useUtils();
-  const [localCategories, setLocalCategories] = useState<Category[]>([]);
+  const [localCategories, setLocalCategories] = useState<BoardCategories>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const dragPointerRef = useRef<{ id: string; offsetY: number } | null>(null);
   const { data: categoriesData } = api.board.getBoard.useQuery();
@@ -60,14 +31,21 @@ export function TaskBoard() {
       await utils.board.getBoard.cancel();
       const previous = utils.board.getBoard.getData();
       const tempId = `temp-${Date.now()}`;
+      const now = new Date();
+      const fallbackUserId =
+        previous?.[0]?.userId ?? localCategories[0]?.userId ?? "temp-user";
       const optimistic: Category = {
         id: tempId,
         title: input.title,
         color: "#94a3b8",
         order: previous?.length ?? localCategories.length,
+        userId: fallbackUserId,
+        createdAt: now,
+        updatedAt: now,
         tasks: [],
       };
-      const next = previous ? [...previous, optimistic] : [...localCategories, optimistic];
+      const base = previous ?? localCategories;
+      const next: BoardCategories = [...base, optimistic];
       utils.board.getBoard.setData(undefined, next);
       setLocalCategories(next);
       return { previous, tempId };
@@ -75,7 +53,7 @@ export function TaskBoard() {
     onError: (_error, _input, context) => {
       if (context?.previous) {
         utils.board.getBoard.setData(undefined, context.previous);
-        setLocalCategories(context.previous as Category[]);
+        setLocalCategories(context.previous);
       }
     },
     onSuccess: (created, _input, context) => {
@@ -83,8 +61,8 @@ export function TaskBoard() {
         return;
       }
       const normalized: Category = {
-        ...(created as Category),
-        tasks: (created as Category).tasks ?? [],
+        ...created,
+        tasks: [],
       };
       utils.board.getBoard.setData(undefined, (prev) => {
         if (!prev) return [normalized];
@@ -124,9 +102,9 @@ export function TaskBoard() {
       setLocalCategories((prev) => {
         const optimistic = prev.filter((cat) => cat.id.startsWith("temp-"));
         if (optimistic.length === 0) {
-          return categoriesData as Category[];
+          return categoriesData;
         }
-        const incoming = categoriesData as Category[];
+        const incoming = categoriesData;
         const incomingIds = new Set(incoming.map((cat) => cat.id));
         const mergedOptimistic = optimistic.filter((cat) => !incomingIds.has(cat.id));
         return [...incoming, ...mergedOptimistic];

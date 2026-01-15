@@ -10,12 +10,16 @@ let createTaskOptions: any;
 let createTaskContext: any;
 let alertSpy: any;
 
+const baseDate = new Date("2025-01-01T00:00:00Z");
 const baseCategories = [
   {
     id: "c1",
     title: "Column 1",
     color: "#fff",
     order: 0,
+    userId: "u1",
+    createdAt: baseDate,
+    updatedAt: baseDate,
     tasks: [],
   },
 ];
