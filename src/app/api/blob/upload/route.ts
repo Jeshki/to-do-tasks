@@ -1,4 +1,5 @@
 import { put } from "@vercel/blob";
+import { env } from "~/env";
 import { auth } from "~/server/auth";
 
 export async function POST(req: Request) {
@@ -14,7 +15,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    const blob = await put(file.name, file, { access: "public" });
+    const blob = await put(file.name, file, {
+      access: "public",
+      token: env.BLOB_READ_WRITE_TOKEN,
+    });
     return Response.json({ url: blob.url });
   } catch (error: any) {
     const message = error?.message ?? "Upload failed";
