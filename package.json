@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:photos": "playwright test --grep \"upload .* photos\"",
     "test:watch": "vitest watch",
     "test:cypress": "cypress run",
     "test:cypress:open": "cypress open",
