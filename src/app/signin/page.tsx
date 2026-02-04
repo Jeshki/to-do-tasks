@@ -1,5 +1,6 @@
-"use client";
+﻿"use client";
 
+import { Eye, EyeOff } from "lucide-react";
 import { Suspense, useMemo, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
@@ -15,6 +16,7 @@ function SignInForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -82,19 +84,29 @@ function SignInForm() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700" htmlFor="password">
-                Slaptažodis
+                Slapta?odis
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                data-testid="signin-password"
-                className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-900 outline-none ring-0 transition focus:border-green-500 focus:ring-2 focus:ring-green-200"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  data-testid="signin-password"
+                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 pr-10 text-gray-900 outline-none ring-0 transition focus:border-green-500 focus:ring-2 focus:ring-green-200"
+                />
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-700"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? "Sl?pti slapta?od?" : "Rodyti slapta?od?"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
             <button

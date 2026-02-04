@@ -33,7 +33,8 @@ export const adminRouter = createTRPCRouter({
         throw new TRPCError({ code: "CONFLICT", message: "User already exists" });
       }
 
-      const passwordHash = await bcrypt.hash(input.password, 12);
+      const password = input.password.trim();
+      const passwordHash = await bcrypt.hash(password, 12);
       const user = await ctx.db.user.create({
         data: {
           email,
@@ -54,7 +55,8 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const passwordHash = await bcrypt.hash(input.password, 12);
+      const password = input.password.trim();
+      const passwordHash = await bcrypt.hash(password, 12);
       await ctx.db.user.update({
         where: { id: input.userId },
         data: { passwordHash },

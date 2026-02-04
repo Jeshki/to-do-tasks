@@ -1,5 +1,6 @@
-"use client";
+﻿"use client";
 
+import { Eye, EyeOff } from "lucide-react";
 import { useMemo, useState } from "react";
 import { api } from "~/uploadthing/react";
 
@@ -72,6 +73,8 @@ export function AdminUsers() {
     password: "",
   });
   const [passwordDrafts, setPasswordDrafts] = useState<Record<string, string>>({});
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [showResetPasswords, setShowResetPasswords] = useState<Record<string, boolean>>({});
   const [actionError, setActionError] = useState<string | null>(null);
 
   const sortedUsers = useMemo(() => sortUsers(users) ?? [], [users]);
@@ -158,16 +161,28 @@ export function AdminUsers() {
               />
             </label>
             <label className="flex flex-col gap-2 text-sm text-slate-700">
-              Slaptažodis
-              <input
-                className="rounded-lg border border-slate-200 px-3 py-2"
-                type="password"
-                minLength={8}
-                required
-                data-testid="admin-create-password"
-                value={createForm.password}
-                onChange={(event) => setCreateForm((prev) => ({ ...prev, password: event.target.value }))}
-              />
+              Slapta?odis
+              <div className="relative">
+                <input
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 pr-10"
+                  type={showCreatePassword ? "text" : "password"}
+                  minLength={8}
+                  required
+                  data-testid="admin-create-password"
+                  value={createForm.password}
+                  onChange={(event) =>
+                    setCreateForm((prev) => ({ ...prev, password: event.target.value }))
+                  }
+                />
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:text-slate-700"
+                  onClick={() => setShowCreatePassword((prev) => !prev)}
+                  aria-label={showCreatePassword ? "Sl?pti slapta?od?" : "Rodyti slapta?od?"}
+                >
+                  {showCreatePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </label>
             <div className="md:col-span-2">
               <button
@@ -207,29 +222,52 @@ export function AdminUsers() {
                   </div>
 
                   <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-center">
-                    <input
-                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
-                      type="password"
-                      minLength={8}
-                      placeholder="Naujas slaptažodis"
-                      value={passwordValue}
-                      onChange={(event) =>
-                        setPasswordDrafts((prev) => ({ ...prev, [user.id]: event.target.value }))
-                      }
-                    />
+                    <div className="relative">
+                      <input
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 pr-10 text-sm"
+                        type={showResetPasswords[user.id] ? "text" : "password"}
+                        minLength={8}
+                        placeholder="Naujas slapta?odis"
+                        value={passwordValue}
+                        onChange={(event) =>
+                          setPasswordDrafts((prev) => ({ ...prev, [user.id]: event.target.value }))
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:text-slate-700"
+                        onClick={() =>
+                          setShowResetPasswords((prev) => ({
+                            ...prev,
+                            [user.id]: !prev[user.id],
+                          }))
+                        }
+                        aria-label={
+                          showResetPasswords[user.id]
+                            ? "Sl?pti slapta?od?"
+                            : "Rodyti slapta?od?"
+                        }
+                      >
+                        {showResetPasswords[user.id] ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                     <button
                       className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-white"
                       onClick={() => handlePasswordReset(user.id)}
                       disabled={resetUserPassword.isPending}
                     >
-                      Atstatyti slaptažodį
+                      Atstatyti slapta?od?
                     </button>
                     <button
                       className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50"
                       onClick={() => handleDelete(user.id, user.email)}
                       disabled={deleteUser.isPending}
                     >
-                      Ištrinti
+                      I?trinti
                     </button>
                   </div>
                 </div>

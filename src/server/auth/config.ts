@@ -57,7 +57,8 @@ export const authConfig = (() => {
                 const emailValue = credentials?.email;
                 const passwordValue = credentials?.password;
                 const email = typeof emailValue === "string" ? emailValue.toLowerCase().trim() : undefined;
-                const password = typeof passwordValue === "string" ? passwordValue : undefined;
+                const password =
+                    typeof passwordValue === "string" ? passwordValue.trim() : undefined;
 
                 if (!email || !password) {
                     if (process.env.NODE_ENV !== "production") {
