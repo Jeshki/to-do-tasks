@@ -7,3 +7,5 @@ E2E setup
 
 Notes:
 - Use `PLAYWRIGHT_SKIP_WEB_SERVER=true` if you start Next.js manually.
+- Set `E2E_PHOTO_COUNTS=10,50,100` to control batch photo upload tests (default: `10,50,100`). Requires `BLOB_READ_WRITE_TOKEN`.
+- Batch photo upload tests clean up created blobs after the run.

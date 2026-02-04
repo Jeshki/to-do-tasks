@@ -1,9 +1,14 @@
-﻿import { test, expect } from "@playwright/test";
+﻿import { del } from "@vercel/blob";
+import { test, expect } from "@playwright/test";
 import { login, waitForTrpcResponse } from "./utils";
 
 const employeeEmail = process.env.E2E_EMPLOYEE_EMAIL;
 const employeePassword = process.env.E2E_EMPLOYEE_PASSWORD;
 const hasBlobToken = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+const photoCounts = (process.env.E2E_PHOTO_COUNTS ?? "10,50,100")
+  .split(",")
+  .map((value) => Number(value.trim()))
+  .filter((value) => Number.isFinite(value) && value > 0);
 
 async function createCategory(page: any, title: string) {
   await page.waitForFunction(
@@ -494,4 +499,62 @@ test.describe("board", () => {
 
     await expect(page.getByAltText(/nuotrauka/i)).toHaveCount(0);
   });
+
+  for (const count of photoCounts) {
+    test(`employee can upload ${count} photos in one batch`, async ({ page }) => {
+      test.skip(!employeeEmail || !employeePassword, "Missing employee credentials");
+      test.skip(!hasBlobToken, "Missing BLOB_READ_WRITE_TOKEN for uploads");
+      test.setTimeout(count >= 100 ? 600_000 : 300_000);
+
+      const unique = Date.now();
+      const categoryTitle = `E2E foto ${count} ${unique}`;
+      const taskTitle = `E2E foto ${count} task ${unique}`;
+
+      await login(page, employeeEmail!, employeePassword!);
+
+      const column = await createCategory(page, categoryTitle);
+      const taskCard = await createTaskInColumn(page, column, taskTitle);
+
+      await taskCard.click({ timeout: 60_000, force: true });
+
+      const uploadedUrls: string[] = [];
+      const handleUploadResponse = async (response: any) => {
+        if (!response.url().includes("/api/blob/upload")) return;
+        if (!response.ok()) return;
+        try {
+          const payload = await response.json();
+          if (payload?.url) uploadedUrls.push(payload.url);
+        } catch {
+          // ignore malformed responses
+        }
+      };
+
+      page.on("response", handleUploadResponse);
+
+      try {
+        const input = page.getByTestId("task-photo-input");
+        const files = Array.from({ length: count }, (_, idx) => ({
+          name: `photo-${String(idx + 1).padStart(3, "0")}.jpg`,
+          mimeType: "image/jpeg",
+          buffer: Buffer.from([0xff, 0xd8, 0xff, 0xd9]),
+        }));
+
+        await input.setInputFiles(files);
+
+        await expect(page.getByAltText(/nuotrauka/i)).toHaveCount(count, {
+          timeout: count >= 100 ? 600_000 : 300_000,
+        });
+      } finally {
+        page.off("response", handleUploadResponse);
+        const uniqueUrls = Array.from(new Set(uploadedUrls));
+        if (uniqueUrls.length && process.env.BLOB_READ_WRITE_TOKEN) {
+          try {
+            await del(uniqueUrls, { token: process.env.BLOB_READ_WRITE_TOKEN });
+          } catch (error) {
+            console.warn("[e2e] failed to cleanup blobs", error);
+          }
+        }
+      }
+    });
+  }
 });
