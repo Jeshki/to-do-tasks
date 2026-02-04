@@ -84,7 +84,7 @@ function SignInForm() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700" htmlFor="password">
-                Slapta?odis
+                Slaptažodis
               </label>
               <div className="relative">
                 <input
@@ -102,7 +102,7 @@ function SignInForm() {
                   type="button"
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-700"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  aria-label={showPassword ? "Sl?pti slapta?od?" : "Rodyti slapta?od?"}
+                  aria-label={showPassword ? "Slėpti slaptažodį" : "Rodyti slaptažodį"}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>

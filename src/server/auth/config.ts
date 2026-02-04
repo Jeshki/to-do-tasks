@@ -57,10 +57,14 @@ export const authConfig = (() => {
                 const emailValue = credentials?.email;
                 const passwordValue = credentials?.password;
                 const email = typeof emailValue === "string" ? emailValue.toLowerCase().trim() : undefined;
-                const password =
+                const passwordRaw =
                     typeof passwordValue === "string" ? passwordValue.trim() : undefined;
+                const password =
+                    passwordRaw && typeof passwordRaw.normalize === "function"
+                        ? passwordRaw.normalize("NFC")
+                        : passwordRaw;
 
-                if (!email || !password) {
+                if (!email || !passwordRaw) {
                     if (process.env.NODE_ENV !== "production") {
                         console.warn("[auth] Missing email or password");
                     }
@@ -81,7 +85,10 @@ export const authConfig = (() => {
                     return null;
                 }
 
-                const isValid = await bcrypt.compare(password, user.passwordHash);
+                let isValid = await bcrypt.compare(passwordRaw, user.passwordHash);
+                if (!isValid && password && password !== passwordRaw) {
+                    isValid = await bcrypt.compare(password, user.passwordHash);
+                }
                 if (!isValid) {
                     if (process.env.NODE_ENV !== "production") {
                         console.warn("[auth] Invalid password", { email });

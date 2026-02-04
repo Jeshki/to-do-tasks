@@ -33,7 +33,10 @@ export const adminRouter = createTRPCRouter({
         throw new TRPCError({ code: "CONFLICT", message: "User already exists" });
       }
 
-      const password = input.password.trim();
+      const password = input.password.trim().normalize("NFC");
+      if (password.length < 8) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Slaptažodis turi būti bent 8 simbolių" });
+      }
       const passwordHash = await bcrypt.hash(password, 12);
       const user = await ctx.db.user.create({
         data: {
@@ -55,7 +58,10 @@ export const adminRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const password = input.password.trim();
+      const password = input.password.trim().normalize("NFC");
+      if (password.length < 8) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Slaptažodis turi būti bent 8 simbolių" });
+      }
       const passwordHash = await bcrypt.hash(password, 12);
       await ctx.db.user.update({
         where: { id: input.userId },

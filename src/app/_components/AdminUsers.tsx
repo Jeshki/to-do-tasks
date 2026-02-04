@@ -161,7 +161,7 @@ export function AdminUsers() {
               />
             </label>
             <label className="flex flex-col gap-2 text-sm text-slate-700">
-              Slapta?odis
+              Slaptažodis
               <div className="relative">
                 <input
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 pr-10"
@@ -178,7 +178,7 @@ export function AdminUsers() {
                   type="button"
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:text-slate-700"
                   onClick={() => setShowCreatePassword((prev) => !prev)}
-                  aria-label={showCreatePassword ? "Sl?pti slapta?od?" : "Rodyti slapta?od?"}
+                  aria-label={showCreatePassword ? "Slėpti slaptažodį" : "Rodyti slaptažodį"}
                 >
                   {showCreatePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -227,7 +227,7 @@ export function AdminUsers() {
                         className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 pr-10 text-sm"
                         type={showResetPasswords[user.id] ? "text" : "password"}
                         minLength={8}
-                        placeholder="Naujas slapta?odis"
+                        placeholder="Naujas slaptažodis"
                         value={passwordValue}
                         onChange={(event) =>
                           setPasswordDrafts((prev) => ({ ...prev, [user.id]: event.target.value }))
@@ -244,8 +244,8 @@ export function AdminUsers() {
                         }
                         aria-label={
                           showResetPasswords[user.id]
-                            ? "Sl?pti slapta?od?"
-                            : "Rodyti slapta?od?"
+                            ? "Slėpti slaptažodį"
+                            : "Rodyti slaptažodį"
                         }
                       >
                         {showResetPasswords[user.id] ? (
@@ -260,7 +260,7 @@ export function AdminUsers() {
                       onClick={() => handlePasswordReset(user.id)}
                       disabled={resetUserPassword.isPending}
                     >
-                      Atstatyti slapta?od?
+                      Atstatyti slaptažodį
                     </button>
                     <button
                       className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50"
