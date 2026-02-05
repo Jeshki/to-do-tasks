@@ -267,7 +267,7 @@ export function AdminUsers() {
                       onClick={() => handleDelete(user.id, user.email)}
                       disabled={deleteUser.isPending}
                     >
-                      I?trinti
+                      Ištrinti
                     </button>
                   </div>
                 </div>
