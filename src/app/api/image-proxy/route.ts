@@ -1,11 +1,30 @@
 import { NextResponse } from "next/server";
 import { env } from "~/env";
 
-const allowedHosts = () => {
+const defaultAllowedHosts = ["utfs.io", ".blob.vercel-storage.com"];
+
+const getAllowedHosts = () => {
   const fromEnv = env.IMAGE_PROXY_ALLOWED_HOSTS
     ? env.IMAGE_PROXY_ALLOWED_HOSTS.split(",").map((v) => v.trim()).filter(Boolean)
     : [];
-  return new Set(fromEnv.length > 0 ? fromEnv : ["utfs.io"]);
+  return fromEnv.length > 0 ? fromEnv : defaultAllowedHosts;
+};
+
+const isHostAllowed = (hostname: string, allowedHosts: string[]) => {
+  const host = hostname.toLowerCase();
+  return allowedHosts.some((entry) => {
+    const value = entry.toLowerCase();
+    if (!value) return false;
+    if (value === "*") return true;
+    if (value.startsWith("*.")) {
+      const suffix = value.slice(1); // ".example.com"
+      return host.endsWith(suffix);
+    }
+    if (value.startsWith(".")) {
+      return host.endsWith(value);
+    }
+    return host === value;
+  });
 };
 
 export async function POST(request: Request) {
@@ -19,8 +38,8 @@ export async function POST(request: Request) {
     if (parsed.protocol !== "https:") {
       return NextResponse.json({ error: "Only https is allowed" }, { status: 400 });
     }
-    const hosts = allowedHosts();
-    if (!hosts.has(parsed.hostname)) {
+    const hosts = getAllowedHosts();
+    if (!isHostAllowed(parsed.hostname, hosts)) {
       return NextResponse.json({ error: "Host not allowed" }, { status: 400 });
     }
 
