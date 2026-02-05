@@ -135,6 +135,8 @@ export function TaskDetailModal({
   const IMAGE_TARGET_WIDTH = 192; // ~2" at 96 DPI
   const IMAGE_TARGET_HEIGHT = 256; // ~2.67" at 96 DPI
   const IMAGE_QUALITY = 0.7; // lossy compression to shrink export
+  const MAX_UPLOAD_FILES = 100;
+  const UPLOAD_CONCURRENCY = 3;
 
   const addPhotoToTask = api.board.addPhotoToTask.useMutation({
     onSuccess: (photo) => {
@@ -251,6 +253,51 @@ export function TaskDetailModal({
   const handleUploadProgress = (progress: number) => {
     setIsUploadingPhotos(true);
     setUploadProgress(progress);
+  };
+
+  const uploadFiles = async (files: File[], concurrency: number) => {
+    const total = files.length;
+    const results: Array<{ url?: string; error?: string }> = new Array(total);
+    let completed = 0;
+    let nextIndex = 0;
+
+    const uploadSingle = async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch("/api/blob/upload", {
+        method: "POST",
+        body: formData,
+      });
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || "Upload failed");
+      }
+      const blob = (await response.json()) as { url: string };
+      return blob.url;
+    };
+
+    const runWorker = async () => {
+      while (true) {
+        const currentIndex = nextIndex;
+        if (currentIndex >= total) return;
+        nextIndex += 1;
+        const file = files[currentIndex];
+        try {
+          const url = await uploadSingle(file);
+          results[currentIndex] = { url };
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Upload failed";
+          results[currentIndex] = { error: message };
+        } finally {
+          completed += 1;
+          handleUploadProgress(Math.round((completed / total) * 100));
+        }
+      }
+    };
+
+    const workers = Array.from({ length: Math.min(concurrency, total) }, () => runWorker());
+    await Promise.all(workers);
+    return results;
   };
 
   const loadImageFromDataUrl = (dataUrl: string) =>
@@ -631,36 +678,43 @@ export function TaskDetailModal({
                 data-testid="task-photo-input"
                 className="hidden"
                 onChange={async (event) => {
-                  const files = Array.from(event.target.files ?? []);
+                  let files = Array.from(event.target.files ?? []);
                   if (files.length === 0) return;
+                  if (files.length > MAX_UPLOAD_FILES) {
+                    alert(
+                      `Pasirinkta ${files.length} nuotrauku. Vienu kartu galima ikelti iki ${MAX_UPLOAD_FILES}. Bus ikelta pirmu ${MAX_UPLOAD_FILES}.`,
+                    );
+                    files = files.slice(0, MAX_UPLOAD_FILES);
+                  }
                   handleUploadBegin();
                   try {
-                    for (const file of files) {
-                      const formData = new FormData();
-                      formData.append("file", file);
-                      const response = await fetch("/api/blob/upload", {
-                        method: "POST",
-                        body: formData,
-                      });
-                      if (!response.ok) {
-                        const message = await response.text();
-                        throw new Error(message || "Upload failed");
-                      }
-                      const blob = (await response.json()) as { url: string };
+                    const results = await uploadFiles(files, UPLOAD_CONCURRENCY);
+                    const failures = results.filter((result) => Boolean(result?.error));
+                    for (const result of results) {
+                      if (!result?.url) continue;
                       addPhotoToTask.mutate({
                         taskId: currentTask.id,
-                        url: blob.url,
+                        url: result.url,
                       });
                     }
                     setUploadProgress(100);
+                    if (failures.length > 0) {
+                      const firstError = failures[0]?.error ?? "Upload failed";
+                      if (failures.length === 1) {
+                        alert(`KLAIDA! ${firstError}`);
+                      } else {
+                        alert(
+                          `KLAIDA! Nepavyko ikelti ${failures.length} is ${files.length} nuotrauku. Pirma klaida: ${firstError}`,
+                        );
+                      }
+                    }
                   } catch (error: any) {
+                    alert(`KLAIDA! ${error?.message ?? "Upload failed"}`);
+                  } finally {
                     resetUploadState();
-                    alert(`KLAIDA! ${error?.message ?? "Nepavyko įkelti failo."}`);
-                    return;
-                  }
-                  resetUploadState();
-                  if (fileInputRef.current) {
-                    fileInputRef.current.value = "";
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = "";
+                    }
                   }
                 }}
               />
@@ -684,7 +738,7 @@ export function TaskDetailModal({
                 >
                   {isUploadingPhotos
                     ? `Progresas: ${Math.round(uploadProgress ?? 0)}%`
-                    : "Leidžiama: iki 1GB vienam failui, iki 900 nuotraukų, jpg/png/gif"}
+                    : "Leidziama: iki 1GB vienam failui, iki 100 nuotrauku vienu metu, jpg/png/gif"}
                 </span>
               </div>
               {isUploadingPhotos && (
@@ -750,3 +804,5 @@ export function TaskDetailModal({
     </>
   );
 }
+
+
