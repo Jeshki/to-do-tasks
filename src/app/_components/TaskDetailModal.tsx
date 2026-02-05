@@ -364,6 +364,11 @@ export function TaskDetailModal({
         linkCell.font = { color: { argb: "FF1D4ED8" }, underline: true };
         photosSheet.getRow(row.number).height = 200;
 
+        const frameCell = row.getCell("frame");
+        const escapedUrl = photo.url.replace(/"/g, '""');
+        frameCell.value = { formula: `IMAGE("${escapedUrl}")` };
+        frameCell.alignment = { vertical: "middle", horizontal: "center" };
+
         if (photo.base64) {
           const imageId = workbook.addImage({ base64: photo.base64, extension: photo.ext });
           photosSheet.addImage(imageId, {
